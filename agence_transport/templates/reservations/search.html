@@ -1,0 +1,156 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Recherche de trajets - Agence de Transport{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Rechercher un trajet</h1>
+    
+    <!-- Search Form -->
+    <div class="card shadow-sm mb-5">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="departure" class="form-label">Gare de départ</label>
+                    <select class="form-select" id="departure" name="departure" required>
+                        <option value="" selected disabled>Choisissez une gare de départ</option>
+                        {% for gare in gares %}
+                            <option value="{{ gare.id }}" {% if request.GET.departure == gare.id|stringformat:'i' %}selected{% endif %}>
+                                {{ gare.nom }} - {{ gare.ville.nom }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="arrival" class="form-label">Gare d'arrivée</label>
+                    <select class="form-select" id="arrival" name="arrival" required>
+                        <option value="" selected disabled>Choisissez une gare d'arrivée</option>
+                        {% for gare in gares %}
+                            <option value="{{ gare.id }}" {% if request.GET.arrival == gare.id|stringformat:'i' %}selected{% endif %}>
+                                {{ gare.nom }} - {{ gare.ville.nom }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="date" class="form-label">Date</label>
+                    <input type="date" class="form-control" id="date" name="date" 
+                           value="{{ request.GET.date|default:'' }}" 
+                           min="{% now 'Y-m-d' %}" required>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">Rechercher</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if request.GET.departure and request.GET.arrival %}
+        {% if horaires %}
+            <div class="search-results">
+                <h2 class="mb-4">Horaires disponibles</h2>
+                <div class="list-group">
+                    {% for horaire in horaires %}
+                        <div class="list-group-item mb-3 shadow-sm">
+                            <div class="row align-items-center">
+                                <div class="col-md-3">
+                                    <div class="h5 mb-0">{{ horaire.date_depart|time:"H:i" }}</div>
+                                    <small class="text-muted">{{ horaire.trajet.depart.nom }}</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="h5 mb-0">{{ horaire.date_arrivee|time:"H:i" }}</div>
+                                    <small class="text-muted">{{ horaire.trajet.arrivee.nom }}</small>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="text-nowrap">
+                                        {{ horaire.duree|time:"H\hi" }}
+                                    </div>
+                                    <small class="text-muted">Durée</small>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="h5 text-primary mb-0">{{ horaire.prix_base }} €</div>
+                                    <small class="text-muted">Prix à partir de</small>
+                                </div>
+                                <div class="col-md-2 text-end">
+                                    <a href="{% url 'reservations:reservation-create' horaire.id %}" class="btn btn-primary">
+                                        Choisir
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                <h4 class="alert-heading">Aucun trajet trouvé</h4>
+                <p>Désolé, nous n'avons trouvé aucun trajet correspondant à votre recherche. Essayez de modifier vos critères ou de sélectionner une autre date.</p>
+            </div>
+            
+            <div class="text-center mt-4">
+                <a href="{% url 'reservations:search' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-2"></i>Nouvelle recherche
+                </a>
+            </div>
+        {% endif %}
+    {% else %}
+        <!-- Help Section -->
+        <div class="row mt-5">
+            <div class="col-lg-6">
+                <h3>Comment réserver votre billet ?</h3>
+                <ol class="list-group list-group-numbered">
+                    <li class="list-group-item border-0 ps-0">Sélectionnez votre gare de départ et d'arrivée</li>
+                    <li class="list-group-item border-0 ps-0">Choisissez votre date de voyage</li>
+                    <li class="list-group-item border-0 ps-0">Consultez les horaires disponibles</li>
+                    <li class="list-group-item border-0 ps-0">Sélectionnez votre horaire et validez votre réservation</li>
+                </ol>
+            </div>
+            <div class="col-lg-6">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h4><i class="fas fa-info-circle text-primary me-2"></i>Bon à savoir</h4>
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Réservation possible jusqu'à 3 mois à l'avance</li>
+                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Modification possible jusqu'à 1h avant le départ</li>
+                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Paiement sécurisé</li>
+                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>E-billet immédiat</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialiser la date du jour par défaut si non définie
+        const dateInput = document.getElementById('date');
+        if (dateInput && !dateInput.value) {
+            const today = new Date();
+            dateInput.value = today.toISOString().split('T')[0];
+        }
+        
+        // Gérer l'interdiction de sélectionner la même gare de départ et d'arrivée
+        const departureSelect = document.getElementById('departure');
+        const arrivalSelect = document.getElementById('arrival');
+        
+        if (departureSelect && arrivalSelect) {
+            departureSelect.addEventListener('change', function() {
+                if (this.value === arrivalSelect.value) {
+                    arrivalSelect.value = '';
+                }
+            });
+            
+            arrivalSelect.addEventListener('change', function() {
+                if (this.value === departureSelect.value) {
+                    departureSelect.value = '';
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,8 @@
+Django>=5.0.0
+django-allauth
+django-crispy-forms
+crispy-bootstrap5
+django-widget-tweaks
+Pillow
+python-dotenv
+stripe

@@ -1,0 +1,269 @@
+{% extends 'base/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Réservation - Agence de Transport{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <!-- Détails du trajet -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h3 class="h5 mb-0">Détails du trajet</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-4 text-center">
+                            <div class="h4 mb-0">{{ horaire.date_depart|time:"H:i" }}</div>
+                            <div class="text-muted small">{{ horaire.date_depart|date:"l d F Y"|capfirst }}</div>
+                            <div class="fw-bold">{{ horaire.trajet.depart.ville.nom }}</div>
+                            <div class="text-muted small">{{ horaire.trajet.depart.nom }}</div>
+                        </div>
+                        <div class="col-md-1 text-center">
+                            <i class="fas fa-arrow-right text-muted"></i>
+                            <div class="small text-muted mt-1">{{ horaire.duree|time:"H\hi" }}</div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="h4 mb-0">{{ horaire.date_arrivee|time:"H:i" }}</div>
+                            <div class="text-muted small">{{ horaire.date_arrivee|date:"l d F Y"|capfirst }}</div>
+                            <div class="fw-bold">{{ horaire.trajet.arrivee.ville.nom }}</div>
+                            <div class="text-muted small">{{ horaire.trajet.arrivee.nom }}</div>
+                        </div>
+                        <div class="col-md-3 text-center text-md-end">
+                            <div class="h4 text-primary">{{ horaire.prix_base }} €</div>
+                            <div class="text-muted small">Prix par passager</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulaire de réservation -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h3 class="h5 mb-0">Informations personnelles</h3>
+                </div>
+                <div class="card-body">
+                    {% if not user.is_authenticated %}
+                        <div class="alert alert-info">
+                            <p class="mb-0"><a href="{% url 'account_login' %}?next={% url 'booking' horaire.id %}">Connectez-vous</a> pour accélérer votre réservation.</p>
+                        </div>
+                    {% endif %}
+
+                    <form method="post" id="booking-form">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.nom|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.prenom|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.email|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.telephone|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <h5 class="mb-3">Détails des voyageurs</h5>
+                        
+                        <div id="passengers-container">
+                            <!-- Les champs de formulaire pour chaque passager seront ajoutés ici par JavaScript -->
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center mt-4">
+                            <button type="button" class="btn btn-outline-primary" id="add-passenger">
+                                <i class="fas fa-plus me-2"></i>Ajouter un passager
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                Payer maintenant <i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Récapitulatif -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm sticky-top" style="top: 1rem;">
+                <div class="card-header bg-light">
+                    <h3 class="h5 mb-0">Récapitulatif</h3>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Trajet :</span>
+                        <span class="fw-bold">{{ horaire.trajet.depart.ville.nom }} → {{ horaire.trajet.arrivee.ville.nom }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Date :</span>
+                        <span>{{ horaire.date_depart|date:"l d F Y"|capfirst }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Horaire :</span>
+                        <span>{{ horaire.date_depart|time:"H:i" }} - {{ horaire.date_arrivee|time:"H:i" }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Durée :</span>
+                        <span>{{ horaire.duree|time:"H\hi" }}</span>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div id="passengers-summary">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>1 x Adulte</span>
+                            <span>{{ horaire.prix_base }} €</span>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between fw-bold">
+                        <span>Total :</span>
+                        <span id="total-amount">{{ horaire.prix_base }} €</span>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3 small">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Le paiement est sécurisé par notre partenaire de paiement.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const passengersContainer = document.getElementById('passengers-container');
+    const addPassengerBtn = document.getElementById('add-passenger');
+    const passengersSummary = document.getElementById('passengers-summary');
+    const totalAmount = document.getElementById('total-amount');
+    const basePrice = {{ horaire.prix_base }};
+    let passengerCount = 1;
+    
+    // Ajouter le premier passager par défaut
+    addPassengerFields();
+    
+    // Gérer l'ajout d'un nouveau passager
+    addPassengerBtn.addEventListener('click', function() {
+        if (passengerCount < 10) { // Limite de 10 passagers
+            passengerCount++;
+            addPassengerFields();
+            updateSummary();
+        } else {
+            alert('Vous ne pouvez pas ajouter plus de 10 passagers.');
+        }
+    });
+    
+    // Fonction pour ajouter les champs d'un nouveau passager
+    function addPassengerFields() {
+        const passengerDiv = document.createElement('div');
+        passengerDiv.className = 'passenger-fields mb-4 border-bottom pb-3';
+        passengerDiv.innerHTML = `
+            <h6 class="mt-4 mb-3">Passager ${passengerCount}</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Civilité</label>
+                        <select class="form-select" name="passenger_${passengerCount}_title" required>
+                            <option value="M.">Monsieur</option>
+                            <option value="Mme">Madame</option>
+                            <option value="Mlle">Mademoiselle</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Type de billet</label>
+                        <select class="form-select ticket-type" name="passenger_${passengerCount}_ticket_type" data-passenger="${passengerCount}">
+                            <option value="standard" data-price="1">Standard</option>
+                            <option value="premiere" data-price="1.5">Première Classe (+50%)</option>
+                            <option value="business" data-price="2">Business (+100%)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Nom</label>
+                        <input type="text" class="form-control" name="passenger_${passengerCount}_last_name" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Prénom</label>
+                        <input type="text" class="form-control" name="passenger_${passengerCount}_first_name" required>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Date de naissance</label>
+                        <input type="date" class="form-control" name="passenger_${passengerCount}_birth_date" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Numéro de pièce d'identité</label>
+                        <input type="text" class="form-control" name="passenger_${passengerCount}_id_number" required>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        passengersContainer.appendChild(passengerDiv);
+        
+        // Ajouter un écouteur d'événements pour mettre à jour le récapitulatif lors du changement de type de billet
+        const ticketTypeSelect = passengerDiv.querySelector('.ticket-type');
+        ticketTypeSelect.addEventListener('change', updateSummary);
+    }
+    
+    // Mettre à jour le récapitulatif des passagers et le montant total
+    function updateSummary() {
+        let summaryHtml = '';
+        let total = 0;
+        
+        // Récupérer tous les sélecteurs de type de billet
+        const ticketTypeSelects = document.querySelectorAll('.ticket-type');
+        
+        ticketTypeSelects.forEach((select, index) => {
+            const passengerNumber = index + 1;
+            const selectedOption = select.options[select.selectedIndex];
+            const ticketType = selectedOption.text;
+            const priceMultiplier = parseFloat(selectedOption.dataset.price);
+            const passengerPrice = basePrice * priceMultiplier;
+            
+            total += passengerPrice;
+            
+            summaryHtml += `
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Passager ${passengerNumber} (${ticketType})</span>
+                    <span>${passengerPrice.toFixed(2)} €</span>
+                </div>
+            `;
+        });
+        
+        // Mettre à jour l'affichage
+        passengersSummary.innerHTML = summaryHtml;
+        totalAmount.textContent = `${total.toFixed(2)} €`;
+    }
+    
+    // Mettre à jour le récapitulatif au chargement de la page
+    updateSummary();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,63 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Annuler la réservation{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h2 class="h5 mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Annuler la réservation</h2>
+                </div>
+                <div class="card-body">
+                    <h3 class="h5 mb-4">Êtes-vous sûr de vouloir annuler cette réservation ?</h3>
+                    
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h4 class="h6 text-muted mb-3">Détails de la réservation</h4>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Référence :</strong> {{ object.reference }}</p>
+                                    <p class="mb-1"><strong>Date :</strong> {{ object.date_reservation|date:"d/m/Y H:i" }}</p>
+                                    <p class="mb-1"><strong>Statut :</strong> 
+                                        <span class="badge bg-{{ object.get_statut_display|lower }}">
+                                            {{ object.get_statut_display }}
+                                        </span>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Trajet :</strong> {{ object.horaire.trajet.depart.ville.nom }} → {{ object.horaire.trajet.arrivee.ville.nom }}</p>
+                                    <p class="mb-1"><strong>Départ :</strong> {{ object.horaire.date_depart|date:"d/m/Y H:i" }}</p>
+                                    <p class="mb-1"><strong>Montant :</strong> {{ object.montant_total }} €</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <h5 class="alert-heading"><i class="fas fa-exclamation-circle me-2"></i>Conditions d'annulation</h5>
+                        <ul class="mb-0">
+                            <li>En cas d'annulation, vous serez remboursé à hauteur de 80% du montant total de la réservation.</li>
+                            <li>Le remboursement sera effectué sous 5 à 7 jours ouvrés sur le moyen de paiement utilisé lors de la réservation.</li>
+                            <li>Les billets associés à cette réservation seront définitivement annulés.</li>
+                        </ul>
+                    </div>
+                    
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'reservation-detail' object.pk %}" class="btn btn-outline-secondary me-md-2">
+                                <i class="fas fa-arrow-left me-1"></i> Retour aux détails
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-times-circle me-1"></i> Confirmer l'annulation
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

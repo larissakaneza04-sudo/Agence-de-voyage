@@ -1,0 +1,29 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Erreur serveur (500){% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <div class="error-template">
+                <h1 class="display-1 text-danger">500</h1>
+                <h2 class="display-4">Erreur serveur</h2>
+                <div class="error-details my-4">
+                    <p class="lead">Oups ! Quelque chose s'est mal passé de notre côté.</p>
+                    <p class="text-muted">Notre équipe technique a été notifiée et travaille à résoudre le problème.</p>
+                    <p>Veuillez réessayer dans quelques instants.</p>
+                </div>
+                <div class="mt-4">
+                    <a href="{% url 'home' %}" class="btn btn-primary btn-lg me-2">
+                        <i class="fas fa-home me-2"></i>Retour à l'accueil
+                    </a>
+                    <a href="mailto:support@agence-transport.com" class="btn btn-outline-secondary btn-lg">
+                        <i class="fas fa-envelope me-2"></i>Contacter le support
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

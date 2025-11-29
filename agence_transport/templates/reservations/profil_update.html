@@ -1,0 +1,98 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Mettre à jour mon profil{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="h5 mb-0">Mettre à jour mon profil</h2>
+                </div>
+                <div class="card-body">
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="id_first_name" class="form-label">Prénom</label>
+                            <input type="text" class="form-control" id="id_first_name" name="first_name" 
+                                   value="{{ form.first_name.value|default:'' }}" required>
+                            <div class="invalid-feedback">
+                                Veuillez fournir un prénom.
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_last_name" class="form-label">Nom</label>
+                            <input type="text" class="form-control" id="id_last_name" name="last_name" 
+                                   value="{{ form.last_name.value|default:'' }}" required>
+                            <div class="invalid-feedback">
+                                Veuillez fournir un nom.
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_email" class="form-label">Adresse email</label>
+                            <input type="email" class="form-control" id="id_email" name="email" 
+                                   value="{{ form.email.value|default:'' }}" required>
+                            <div class="invalid-feedback">
+                                Veuillez fournir une adresse email valide.
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{% url 'home' %}" class="btn btn-outline-secondary me-md-2">
+                                <i class="fas fa-times me-1"></i> Annuler
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Enregistrer les modifications
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card shadow mt-4">
+                <div class="card-header bg-light">
+                    <h3 class="h6 mb-0">Changer de mot de passe</h3>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        Pour des raisons de sécurité, vous pouvez changer votre mot de passe en cliquant sur le bouton ci-dessous.
+                        Vous serez redirigé vers une page sécurisée pour effectuer cette opération.
+                    </p>
+                    <a href="{% url 'account_change_password' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-key me-1"></i> Changer mon mot de passe
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+// Validation des champs du formulaire
+(function () {
+    'use strict'
+    
+    // Récupérer tous les formulaires auxquels nous voulons appliquer le style de validation Bootstrap
+    var forms = document.querySelectorAll('.needs-validation')
+    
+    // Boucle sur les champs et empêcher la soumission
+    Array.prototype.slice.call(forms).forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (!form.checkValidity()) {
+                event.preventDefault()
+                event.stopPropagation()
+            }
+            
+            form.classList.add('was-validated')
+        }, false)
+    })
+})()
+</script>
+{% endblock %}
+
+{% endblock %}

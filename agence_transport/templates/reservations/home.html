@@ -1,0 +1,136 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/home.css' %}">
+{% endblock %}
+
+{% block title %}Accueil - Agence de Transport{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="home-banner">
+        <div class="banner-content">
+            <h1 class="display-4">Bienvenue sur notre plateforme de réservation</h1>
+            <p class="lead">Réservez vos billets de bus en toute simplicité pour un voyage confortable et sécurisé.</p>
+            <hr class="my-4">
+            <p>Trouvez et réservez votre prochain trajet en quelques clics.</p>
+            <a class="btn btn-primary btn-lg" href="{% url 'reservations:search' %}" role="button">Rechercher un trajet</a>
+        </div>
+    </div>
+
+    <h2 class="mt-5 mb-4">Prochains départs</h2>
+    
+    {% if horaires %}
+        <div class="row">
+            {% for horaire in horaires %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                {{ horaire.trajet.depart.ville.nom }} 
+                                <i class="fas fa-arrow-right mx-2"></i> 
+                                {{ horaire.trajet.arrivee.ville.nom }}
+                            </h5>
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                {{ horaire.date_depart|date:"d F Y" }} à {{ horaire.heure_depart|time:"H:i" }}
+                            </h6>
+                            <p class="card-text">
+                                <i class="fas fa-bus me-2"></i> {{ horaire.bus.modele }} ({{ horaire.bus.places }} places)<br>
+                                <i class="fas fa-euro-sign me-2"></i> {{ horaire.prix }} €
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge bg-{% if horaire.places_disponibles > 10 %}success{% elif horaire.places_disponibles > 0 %}warning{% else %}danger{% endif %}">
+                                    {{ horaire.places_disponibles }} place{{ horaire.places_disponibles|pluralize }} disponible{{ horaire.places_disponibles|pluralize }}
+                                </span>
+                                <a href="{% url 'reservations:reservation-create' pk=horaire.id %}" class="btn btn-sm btn-primary">
+                                    Réserver <i class="fas fa-arrow-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        {% if is_paginated %}
+            <nav aria-label="Pagination" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1" aria-label="Première">
+                                <span aria-hidden="true">&laquo;&laquo;</span>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Précédente">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Suivante">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Dernière">
+                                <span aria-hidden="true">&raquo;&raquo;</span>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="alert alert-info" role="alert">
+            Aucun départ prévu pour le moment. Veuillez réessayer ultérieurement.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Mettre à jour l'affichage des places disponibles en temps réel
+    document.addEventListener('DOMContentLoaded', function() {
+        // Fonction pour formater les dates en français
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.querySelectorAll('.date-depart').forEach(function(element) {
+            const date = new Date(element.textContent);
+            element.textContent = date.toLocaleDateString('fr-FR', options);
+        });
+        
+        // Mise à jour en temps réel des places disponibles (simulée)
+        setInterval(function() {
+            document.querySelectorAll('.places-disponibles').forEach(function(element) {
+                const currentPlaces = parseInt(element.textContent);
+                if (currentPlaces > 0) {
+                    // Simulation de la réservation d'une place (à remplacer par une vraie mise à jour AJAX)
+                    const newPlaces = Math.max(0, currentPlaces - Math.floor(Math.random() * 2));
+                    if (newPlaces !== currentPlaces) {
+                        element.textContent = newPlaces;
+                        // Mettre à jour la classe du badge
+                        const badge = element.closest('.card').querySelector('.badge');
+                        badge.className = `badge bg-${newPlaces > 10 ? 'success' : newPlaces > 0 ? 'warning' : 'danger'}`;
+                    }
+                }
+            });
+        }, 5000); // Mise à jour toutes les 5 secondes
+    });
+</script>
+{% endblock %}

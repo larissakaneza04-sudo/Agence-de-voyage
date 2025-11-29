@@ -1,0 +1,28 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Page non trouvée (404){% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <div class="error-template">
+                <h1 class="display-1 text-warning">404</h1>
+                <h2 class="display-4">Page non trouvée</h2>
+                <div class="error-details my-4">
+                    <p class="lead">Désolé, la page que vous recherchez est introuvable.</p>
+                    <p class="text-muted">Il est possible que l'URL soit incorrecte ou que la page ait été déplacée.</p>
+                </div>
+                <div class="mt-4">
+                    <a href="{% url 'home' %}" class="btn btn-primary btn-lg me-2">
+                        <i class="fas fa-home me-2"></i>Retour à l'accueil
+                    </a>
+                    <a href="javascript:history.back()" class="btn btn-outline-secondary btn-lg">
+                        <i class="fas fa-arrow-left me-2"></i>Page précédente
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,188 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Nouvelle Réservation{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Nouvelle Réservation</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="reservationForm">
+                        {% csrf_token %}
+                        
+                        {% if form.errors or client_form.errors %}
+                        <div class="alert alert-danger">
+                            <h5 class="alert-heading">Veuillez corriger les erreurs ci-dessous :</h5>
+                            <ul class="mb-0">
+                                {% for field in form %}
+                                    {% for error in field.errors %}
+                                        <li>{{ field.label }}: {{ error|escape }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                                {% for field in client_form %}
+                                    {% for error in field.errors %}
+                                        <li>{{ field.label }}: {{ error|escape }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                                {% for error in form.non_field_errors %}
+                                    <li>{{ error|escape }}</li>
+                                {% endfor %}
+                                {% for error in client_form.non_field_errors %}
+                                    <li>{{ error|escape }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Informations du client -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h4 class="mb-0">Informations personnelles</h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="id_prenom" class="form-label">Prénom</label>
+                                        <input type="text" class="form-control" id="id_prenom" name="prenom" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="id_nom" class="form-label">Nom</label>
+                                        <input type="text" class="form-control" id="id_nom" name="nom" required>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="id_email" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="id_email" name="email" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="id_telephone" class="form-label">Téléphone</label>
+                                        <input type="tel" class="form-control" id="id_telephone" name="telephone" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Détails de la réservation -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h4 class="mb-0">Détails du voyage</h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="id_type_billet" class="form-label">Type de billet</label>
+                                    {{ form.type_billet }}
+                                </div>
+                                <div class="mb-3">
+                                    <label for="id_nombre_billets" class="form-label">Nombre de billets</label>
+                                    {{ form.nombre_billets }}
+                                    <div class="form-text">Maximum 10 billets par réservation</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="id_commentaires" class="form-label">Commentaires ou demandes spéciales</label>
+                                    {{ form.commentaires }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Récapitulatif -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h4 class="mb-0">Récapitulatif</h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered">
+                                        <tbody>
+                                            <tr>
+                                                <th>Trajet</th>
+                                                <td>{{ horaire.trajet.depart.ville.nom }} → {{ horaire.trajet.arrivee.ville.nom }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Date et heure de départ</th>
+                                                <td>{{ horaire.date_depart|date:"d/m/Y H:i" }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Date et heure d'arrivée</th>
+                                                <td>{{ horaire.date_arrivee|date:"d/m/Y H:i" }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Prix unitaire</th>
+                                                <td id="prix_unitaire">{{ horaire.prix_base }} €</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Total</th>
+                                                <td id="prix_total">0.00 €</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'reservations:home' %}" class="btn btn-outline-secondary me-md-2">
+                                <i class="fas fa-arrow-left me-1"></i> Retour
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-check me-1"></i> Confirmer la réservation
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Calcul automatique du prix total
+    document.addEventListener('DOMContentLoaded', function() {
+        // Récupérer l'ID du champ nombre_billets en JavaScript pur
+        const nombreBilletsId = '{{ form.nombre_billets.id_for_label|escapejs }}';
+        const nombreBillets = document.getElementById(nombreBilletsId);
+        const prixTotal = document.getElementById('prix_total');
+        
+        // Récupérer le prix unitaire depuis l'attribut data
+        const prixUnitaire = parseFloat('{{ horaire.prix_base|default:0|stringformat:"f" }}'.replace(',', '.'));
+        
+        // Vérifier si les éléments existent avant de les utiliser
+        if (nombreBillets && prixTotal) {
+            function updateTotal() {
+                try {
+                    const nb = parseInt(nombreBillets.value) || 0;
+                    if (isNaN(nb) || nb < 0) {
+                        prixTotal.textContent = '0.00 €';
+                        return;
+                    }
+                    const total = (nb * prixUnitaire).toFixed(2);
+                    prixTotal.textContent = total + ' €';
+                } catch (e) {
+                    console.error('Erreur lors du calcul du total :', e);
+                    prixTotal.textContent = '0.00 €';
+                }
+            }
+            
+            // Ajouter les écouteurs d'événements
+            if (nombreBillets) {
+                nombreBillets.addEventListener('change', updateTotal);
+                nombreBillets.addEventListener('input', updateTotal);
+                // Initialiser le total
+                updateTotal();
+            }
+        } else {
+            console.error('Éléments du formulaire non trouvés');
+            if (prixTotal) {
+                prixTotal.textContent = '0.00 €';
+            }
+        }
+    });
+</script>
+{% endblock %}
