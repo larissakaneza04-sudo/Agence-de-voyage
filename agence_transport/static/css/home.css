@@ -1,44 +1,31 @@
-/* Style pour la bannière d'accueil avec logo en arrière-plan */
+/* Style pour la bannière d'accueil */
 .home-banner {
-    background: url('../css/logo.png') center/40% auto no-repeat;
-    background-color: #f8f9fa;
+    background-color: #0d6efd; /* Couleur de fond unie */
     position: relative;
-    min-height: 600px;
+    min-height: 400px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     text-align: center;
-    padding: 3rem 2rem;
-    border-radius: 0.5rem;
-    overflow: hidden;
-    background-blend-mode: multiply;
-    background-attachment: fixed;
+    padding: 2rem;
+    color: white;
 }
 
 .home-banner::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(255, 255, 255, 0.4);
-    z-index: 1;
-    backdrop-filter: blur(2px);
+    display: none; /* Suppression de l'overlay blanc */
 }
 
 .banner-content {
     position: relative;
     z-index: 2;
-    background-color: rgba(255, 255, 255, 0.65);
-    padding: 2.5rem;
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 2rem;
     border-radius: 0.5rem;
     max-width: 800px;
     margin: 0 auto;
     border: 1px solid rgba(0, 0, 0, 0.1);
-    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.15);
-    backdrop-filter: blur(3px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
 .banner-content h1 {

@@ -5,14 +5,14 @@ from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Q
 from django.http import JsonResponse
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, FormView
 from django.urls import reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import PermissionDenied
 from django.template import RequestContext
 from django.http import HttpResponseForbidden, HttpResponseServerError, HttpResponseNotFound
 from .models import *
-from .forms import *
+from .forms import ContactForm, ClientForm, ReservationForm, PaiementForm, RemboursementForm, FiltreHorairesForm
 
 class SearchView(ListView):
     model = Horaire
@@ -46,6 +46,37 @@ class SearchView(ListView):
         # Add all gares to the context for the dropdowns
         context['gares'] = Gare.objects.select_related('ville').all()
         return context
+
+class ContactView(FormView):
+    template_name = 'reservations/contact.html'
+    form_class = ContactForm
+    success_url = reverse_lazy('reservations:contact')
+    
+    def form_valid(self, form):
+        # Envoyer l'email
+        sujet = f"[Contact] {form.cleaned_data['sujet']}"
+        message = f"De: {form.cleaned_data['email']}\n\n{form.cleaned_data['message']}"
+        
+        send_mail(
+            sujet,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            ['larissainspirationspirittravel@gmail.com'],
+            fail_silently=False,
+        )
+        
+        # Envoyer une copie à l'utilisateur si demandé
+        if form.cleaned_data.get('copie'):
+            send_mail(
+                f"[Copie] {sujet}",
+                f"Voici une copie du message que vous nous avez envoyé :\n\n{message}",
+                settings.DEFAULT_FROM_EMAIL,
+                [form.cleaned_data['email']],
+                fail_silently=False,
+            )
+        
+        messages.success(self.request, 'Votre message a bien été envoyé. Nous vous répondrons dans les plus brefs délais.')
+        return super().form_valid(form)
 
 # Vues pour les utilisateurs standards
 class HomeView(ListView):
@@ -296,11 +327,11 @@ class ReservationCreateView(LoginRequiredMixin, CreateView):
                         
                         <p>Merci d'avoir choisi nos services !</p>
                         
-                        <p>Cordialement,<br>L'équipe Agence Transport</p>
+                        <p>Cordialement,<br>L'équipe Larissa Inspiration spirit travel</p>
                     </div>
                     
                     <div style="background-color: #f8f9fa; padding: 15px; text-align: center; font-size: 12px; color: #6c757d;">
-                        <p>© {timezone.now().year} Agence Transport - Tous droits réservés</p>
+                        <p>© {timezone.now().year} Larissa Inspiration spirit travel - Tous droits réservés</p>
                     </div>
                 </div>
             </body>

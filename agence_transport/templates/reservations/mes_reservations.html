@@ -38,7 +38,7 @@
                                     {{ reservation.horaire.trajet.arrivee.ville.nom }}
                                     <small class="d-block text-muted">{{ reservation.horaire.date_arrivee|date:"d/m/Y H:i" }}</small>
                                 </td>
-                                <td>{{ reservation.montant_total }} €</td>
+                                <td>{{ reservation.montant_total }} Fbu</td>
                                 <td>
                                     <span class="badge {% if reservation.statut == 'CONF' %}bg-success{% elif reservation.statut == 'ANNU' %}bg-danger{% else %}bg-secondary{% endif %}">
                                         {{ reservation.get_statut_display }}

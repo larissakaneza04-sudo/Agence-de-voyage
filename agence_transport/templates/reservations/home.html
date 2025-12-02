@@ -3,134 +3,256 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/home.css' %}">
+<style>
+    .hero-section {
+        background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("{% static 'css/page.png' %}");
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        color: white;
+        padding: 200px 0;
+        text-align: center;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+    }
+    .transport-icons {
+        margin-top: 80px;
+        display: flex;
+        justify-content: center;
+        gap: 50px;
+    }
+    .service-card {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        transition: transform 0.3s;
+        height: 100%;
+        padding: 30px 20px;
+        text-align: center;
+    }
+    .service-card:hover {
+        transform: translateY(-10px);
+    }
+    .service-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+    }
+    .vehicle-card {
+        border: none;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transition: transform 0.3s;
+    }
+    .vehicle-card:hover {
+        transform: translateY(-10px);
+    }
+    .why-us-card {
+        background: white;
+        border-radius: 10px;
+        padding: 30px 20px;
+        text-align: center;
+        height: 100%;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+</style>
 {% endblock %}
 
-{% block title %}Accueil - Agence de Transport{% endblock %}
+{% block title %}Accueil - Larissa Inspiration spirit travel{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="home-banner">
-        <div class="banner-content">
-            <h1 class="display-4">Bienvenue sur notre plateforme de réservation</h1>
-            <p class="lead">Réservez vos billets de bus en toute simplicité pour un voyage confortable et sécurisé.</p>
-            <hr class="my-4">
-            <p>Trouvez et réservez votre prochain trajet en quelques clics.</p>
-            <a class="btn btn-primary btn-lg" href="{% url 'reservations:search' %}" role="button">Rechercher un trajet</a>
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <h1 style="font-size: 3.5rem; font-weight: 700; margin-bottom: 20px;">Larissa Inspiration spirit travel</h1>
+        <p class="lead" style="font-size: 1.5rem; margin-bottom: 30px;">Votre voyage, notre moteur.</p>
+        <a href="#vehicules" class="btn btn-primary btn-lg" style="padding: 12px 30px; font-size: 1.1rem; border-radius: 30px; font-weight: 600;">Voir les véhicules</a>
+        
+        <div class="transport-icons">
+            <div class="transport-icon">
+                <i class="fas fa-car" style="font-size: 3rem; margin-bottom: 15px;"></i>
+                <p>Voiture</p>
+            </div>
+            <div class="transport-icon">
+                <i class="fas fa-train" style="font-size: 3rem; margin-bottom: 15px;"></i>
+                <p>Train</p>
+            </div>
+            <div class="transport-icon">
+                <i class="fas fa-plane" style="font-size: 3rem; margin-bottom: 15px;"></i>
+                <p>Avion</p>
+            </div>
         </div>
     </div>
+</section>
 
-    <h2 class="mt-5 mb-4">Prochains départs</h2>
-    
-    {% if horaires %}
+<!-- Nos Services -->
+<section id="services" class="py-5" style="background-color: #f8f9fa;">
+    <div class="container">
+        <h2 class="text-center mb-5" style="font-weight: 700; color: #2c3e50;">Nos Services</h2>
         <div class="row">
-            {% for horaire in horaires %}
-                <div class="col-md-6 col-lg-4 mb-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                {{ horaire.trajet.depart.ville.nom }} 
-                                <i class="fas fa-arrow-right mx-2"></i> 
-                                {{ horaire.trajet.arrivee.ville.nom }}
-                            </h5>
-                            <h6 class="card-subtitle mb-2 text-muted">
-                                {{ horaire.date_depart|date:"d F Y" }} à {{ horaire.heure_depart|time:"H:i" }}
-                            </h6>
-                            <p class="card-text">
-                                <i class="fas fa-bus me-2"></i> {{ horaire.bus.modele }} ({{ horaire.bus.places }} places)<br>
-                                <i class="fas fa-euro-sign me-2"></i> {{ horaire.prix }} €
-                            </p>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span class="badge bg-{% if horaire.places_disponibles > 10 %}success{% elif horaire.places_disponibles > 0 %}warning{% else %}danger{% endif %}">
-                                    {{ horaire.places_disponibles }} place{{ horaire.places_disponibles|pluralize }} disponible{{ horaire.places_disponibles|pluralize }}
-                                </span>
-                                <a href="{% url 'reservations:reservation-create' pk=horaire.id %}" class="btn btn-sm btn-primary">
-                                    Réserver <i class="fas fa-arrow-right ms-1"></i>
-                                </a>
+            <div class="col-md-3 mb-4">
+                <div class="service-card">
+                    <div class="service-icon" style="background-color: #f8f1e9;">
+                        <i class="fas fa-car" style="font-size: 2rem; color: #e67e22;"></i>
+                    </div>
+                    <h4 style="color: #2c3e50; font-weight: 600; margin-bottom: 15px;">Transferts</h4>
+                    <p style="color: #7f8c8d;">Service de transfert personnalisé pour tous vos déplacements</p>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="service-card">
+                    <div class="service-icon" style="background-color: #e8f4f8;">
+                        <i class="fas fa-plane-arrival" style="font-size: 2rem; color: #3498db;"></i>
+                    </div>
+                    <h4 style="color: #2c3e50; font-weight: 600; margin-bottom: 15px;">Transferts Aéroport</h4>
+                    <p style="color: #7f8c8d;">Transferts ponctuels vers et depuis les aéroports</p>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="service-card">
+                    <div class="service-icon" style="background-color: #f0f8e7;">
+                        <i class="fas fa-taxi" style="font-size: 2rem; color: #2ecc71;"></i>
+                    </div>
+                    <h4 style="color: #2c3e50; font-weight: 600; margin-bottom: 15px;">Location de Voitures</h4>
+                    <p style="color: #7f8c8d;">Large gamme de véhicules à votre disposition</p>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="service-card">
+                    <div class="service-icon" style="background-color: #f9e8f0;">
+                        <i class="fas fa-users" style="font-size: 2rem; color: #e84393;"></i>
+                    </div>
+                    <h4 style="color: #2c3e50; font-weight: 600; margin-bottom: 15px;">Voyages en Groupe</h4>
+                    <p style="color: #7f8c8d;">Solutions de transport adaptées aux groupes</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Notre Flotte -->
+<section id="vehicules" class="py-5" style="background-color: white;">
+    <div class="container">
+        <h2 class="text-center mb-5" style="font-weight: 700; color: #2c3e50;">Notre Flotte</h2>
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="card vehicle-card">
+                    <img src="{% static 'css/voitureDeLuxe.png' %}" class="card-img-top" alt="Van de luxe" style="height: 220px; object-fit: cover; width: 100%;">
+                    <div class="card-body text-center">
+                        <h5 class="card-title" style="font-weight: 600; color: #2c3e50; margin-bottom: 15px;">Van de Luxe</h5>
+                        <p class="card-text" style="color: #7f8c8d;">Idéal pour les petits groupes jusqu'à 8 personnes.</p>
+                        <a href="#" class="btn btn-outline-primary mt-3" style="border-radius: 20px; padding: 8px 20px; font-weight: 500;">En savoir plus</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card vehicle-card">
+                    <img src="{% static 'css/Confortélégance.png' %}" class="card-img-top" alt="Voiture de luxe" style="height: 220px; object-fit: cover; width: 100%;">
+                    <div class="card-body text-center">
+                        <h5 class="card-title" style="font-weight: 600; color: #2c3e50; margin-bottom: 15px;">Voiture de Luxe</h5>
+                        <p class="card-text" style="color: #7f8c8d;">Confort et élégance pour vos déplacements.</p>
+                        <a href="#" class="btn btn-outline-primary mt-3" style="border-radius: 20px; padding: 8px 20px; font-weight: 500;">En savoir plus</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card vehicle-card">
+                    <img src="{% static 'css/BusdeLuxe.png' %}" class="card-img-top" alt="Bus de luxe" style="height: 220px; object-fit: cover; width: 100%;">
+                    <div class="card-body text-center">
+                        <h5 class="card-title" style="font-weight: 600; color: #2c3e50; margin-bottom: 15px;">Bus de Luxe</h5>
+                        <p class="card-text" style="color: #7f8c8d;">Parfait pour les grands groupes et événements.</p>
+                        <a href="#" class="btn btn-outline-primary mt-3" style="border-radius: 20px; padding: 8px 20px; font-weight: 500;">En savoir plus</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Pourquoi Nous Choisir -->
+<section id="pourquoi-nous" class="py-5" style="background-color: #f8f9fa;">
+    <div class="container">
+        <h2 class="text-center mb-5" style="font-weight: 700; color: #2c3e50;">Pourquoi Nous Choisir ?</h2>
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="why-us-card">
+                    <div style="width: 80px; height: 80px; background-color: #f8e8e8; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 25px;">
+                        <i class="fas fa-shield-alt" style="font-size: 2rem; color: #e74c3c;"></i>
+                    </div>
+                    <h4 style="color: #2c3e50; font-weight: 600; margin-bottom: 15px;">Sécurité Garantie</h4>
+                    <p style="color: #7f8c8d;">Votre sécurité est notre priorité absolue avec des véhicules régulièrement entretenus.</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="why-us-card">
+                    <div style="width: 80px; height: 80px; background-color: #e8f4f8; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 25px;">
+                        <i class="fas fa-user-tie" style="font-size: 2rem; color: #3498db;"></i>
+                    </div>
+                    <h4 style="color: #2c3e50; font-weight: 600; margin-bottom: 15px;">Chauffeurs Expérimentés</h4>
+                    <p style="color: #7f8c8d;">Nos chauffeurs professionnels sont formés pour vous offrir le meilleur service.</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="why-us-card">
+                    <div style="width: 80px; height: 80px; background-color: #e8f8f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 25px;">
+                        <i class="fas fa-headset" style="font-size: 2rem; color: #2ecc71;"></i>
+                    </div>
+                    <h4 style="color: #2c3e50; font-weight: 600; margin-bottom: 15px;">Service Client 24/7</h4>
+                    <p style="color: #7f8c8d;">Notre équipe est disponible à tout moment pour répondre à vos besoins.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Prochains départs -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="text-center mb-5" style="font-weight: 700; color: #2c3e50;">Prochains départs</h2>
+        
+        {% if horaires %}
+            <div class="row">
+                {% for horaire in horaires %}
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card h-100 vehicle-card">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    {{ horaire.trajet.depart.ville.nom }} 
+                                    <i class="fas fa-arrow-right mx-2"></i> 
+                                    {{ horaire.trajet.arrivee.ville.nom }}
+                                </h5>
+                                <h6 class="card-subtitle mb-2 text-muted">
+                                    {{ horaire.date_depart|date:"d F Y" }} à {{ horaire.heure_depart|time:"H:i" }}
+                                </h6>
+                                <p class="card-text">
+                                    <i class="fas fa-bus me-2"></i> {{ horaire.bus.modele }} ({{ horaire.bus.places }} places)<br>
+                                    <i class="fas fa-euro-sign me-2"></i> {{ horaire.prix }} Fbu
+                                </p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="badge bg-{% if horaire.places_disponibles > 10 %}success{% elif horaire.places_disponibles > 0 %}warning{% else %}danger{% endif %}">
+                                        {{ horaire.places_disponibles }} place{{ horaire.places_disponibles|pluralize }} disponible{{ horaire.places_disponibles|pluralize }}
+                                    </span>
+                                    <a href="{% url 'reservations:reservation-create' pk=horaire.id %}" class="btn btn-sm btn-primary">
+                                        Réserver <i class="fas fa-arrow-right ms-1"></i>
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            {% endfor %}
-        </div>
-        
-        {% if is_paginated %}
-            <nav aria-label="Pagination" class="mt-4">
-                <ul class="pagination justify-content-center">
-                    {% if page_obj.has_previous %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page=1" aria-label="Première">
-                                <span aria-hidden="true">&laquo;&laquo;</span>
-                            </a>
-                        </li>
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Précédente">
-                                <span aria-hidden="true">&laquo;</span>
-                            </a>
-                        </li>
-                    {% endif %}
-                    
-                    {% for num in page_obj.paginator.page_range %}
-                        {% if page_obj.number == num %}
-                            <li class="page-item active">
-                                <span class="page-link">{{ num }}</span>
-                            </li>
-                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
-                            </li>
-                        {% endif %}
-                    {% endfor %}
-                    
-                    {% if page_obj.has_next %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Suivante">
-                                <span aria-hidden="true">&raquo;</span>
-                            </a>
-                        </li>
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Dernière">
-                                <span aria-hidden="true">&raquo;&raquo;</span>
-                            </a>
-                        </li>
-                    {% endif %}
-                </ul>
-            </nav>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info text-center" role="alert">
+                Aucun départ prévu pour le moment. Veuillez réessayer ultérieurement.
+            </div>
         {% endif %}
-    {% else %}
-        <div class="alert alert-info" role="alert">
-            Aucun départ prévu pour le moment. Veuillez réessayer ultérieurement.
-        </div>
-    {% endif %}
-</div>
-{% endblock %}
+    </div>
+</section>
 
-{% block extra_js %}
-<script>
-    // Mettre à jour l'affichage des places disponibles en temps réel
-    document.addEventListener('DOMContentLoaded', function() {
-        // Fonction pour formater les dates en français
-        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        document.querySelectorAll('.date-depart').forEach(function(element) {
-            const date = new Date(element.textContent);
-            element.textContent = date.toLocaleDateString('fr-FR', options);
-        });
-        
-        // Mise à jour en temps réel des places disponibles (simulée)
-        setInterval(function() {
-            document.querySelectorAll('.places-disponibles').forEach(function(element) {
-                const currentPlaces = parseInt(element.textContent);
-                if (currentPlaces > 0) {
-                    // Simulation de la réservation d'une place (à remplacer par une vraie mise à jour AJAX)
-                    const newPlaces = Math.max(0, currentPlaces - Math.floor(Math.random() * 2));
-                    if (newPlaces !== currentPlaces) {
-                        element.textContent = newPlaces;
-                        // Mettre à jour la classe du badge
-                        const badge = element.closest('.card').querySelector('.badge');
-                        badge.className = `badge bg-${newPlaces > 10 ? 'success' : newPlaces > 0 ? 'warning' : 'danger'}`;
-                    }
-                }
-            });
-        }, 5000); // Mise à jour toutes les 5 secondes
-    });
-</script>
 {% endblock %}

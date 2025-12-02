@@ -1,0 +1,157 @@
+{% extends 'base/base.html' %}
+{% load static i18n %}
+
+{% block title %}{% trans 'Contactez-nous' %} - Larissa Inspiration spirit travel{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h1 class="text-center mb-5">{% trans 'Contactez-nous' %}</h1>
+            
+            <div class="card shadow-sm mb-5">
+                <div class="card-body p-4">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h2 class="h4 mb-4">{% trans 'Informations de contact' %}</h2>
+                            <div class="mb-4">
+                                <h3 class="h5">{% trans 'Adresse' %}</h3>
+                                <p class="mb-0">
+                                    <i class="fas fa-map-marker-alt text-primary me-2"></i>
+                                    Bujumbure, Avenue de la victoire no33
+                                </p>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <h3 class="h5">{% trans 'Téléphone' %}</h3>
+                                <p class="mb-0">
+                                    <i class="fas fa-phone text-primary me-2"></i>
+                                    <a href="tel:+25761869677">+257 61 86 96 77</a>
+                                </p>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <h3 class="h5">{% trans 'Email' %}</h3>
+                                <p class="mb-0">
+                                    <i class="fas fa-envelope text-primary me-2"></i>
+                                    <a href="mailto:larissainspirationspirittravel@gmail.com">larissainspirationspirittravel@gmail.com</a>
+                                </p>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <h3 class="h5">{% trans 'Horaires d\'ouverture' %}</h3>
+                                <ul class="list-unstyled">
+                                    <li>{% trans 'Lundi - Vendredi : 8h00 - 18h00' %}</li>
+                                    <li>{% trans 'Samedi : 9h00 - 13h00' %}</li>
+                                    <li>{% trans 'Dimanche : Fermé' %}</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h2 class="h4 mb-4">{% trans 'Envoyez-nous un message' %}</h2>
+                            <form method="post" class="needs-validation" novalidate>
+                                {% csrf_token %}
+                                
+                                {% if form.non_field_errors %}
+                                    <div class="alert alert-danger">
+                                        {% for error in form.non_field_errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                
+                                <div class="mb-3">
+                                    <label for="{{ form.sujet.id_for_label }}" class="form-label">
+                                        {{ form.sujet.label }}
+                                    </label>
+                                    {{ form.sujet }}
+                                    {% if form.sujet.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.sujet.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="{{ form.email.id_for_label }}" class="form-label">
+                                        {{ form.email.label }}
+                                    </label>
+                                    {{ form.email }}
+                                    {% if form.email.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.email.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="{{ form.message.id_for_label }}" class="form-label">
+                                        {{ form.message.label }}
+                                    </label>
+                                    {{ form.message }}
+                                    {% if form.message.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.message.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mb-3 form-check">
+                                    {{ form.copie }}
+                                    <label class="form-check-label" for="{{ form.copie.id_for_label }}">
+                                        {{ form.copie.label }}
+                                    </label>
+                                </div>
+                                
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary btn-lg">
+                                        <i class="fas fa-paper-plane me-2"></i> {% trans 'Envoyer le message' %}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-5">
+                <h2 class="h4 mb-3">{% trans 'Nous trouver' %}</h2>
+                <div class="ratio ratio-16x9">
+                    <iframe 
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3988.857056692162!2d29.35887661475389!3d-3.376016397526002!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zM8KsMjInIDMzLjciUyAyOcKwMjEnNDIuNiJF!5e0!3m2!1sfr!2sbi!4v1620000000000!5m2!1sfr!2sbi" 
+                        style="border:0;" 
+                        allowfullscreen="" 
+                        loading="lazy">
+                    </iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Activation des styles de validation du formulaire
+(function () {
+    'use strict'
+    
+    // Récupérer tous les formulaires auxquels nous voulons appliquer des styles de validation personnalisés
+    var forms = document.querySelectorAll('.needs-validation')
+    
+    // Boucle sur les champs et empêcher la soumission
+    Array.prototype.slice.call(forms)
+        .forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                
+                form.classList.add('was-validated')
+            }, false)
+        })
+})()
+</script>
+{% endblock %}

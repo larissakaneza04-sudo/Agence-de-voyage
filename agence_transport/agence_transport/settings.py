@@ -185,5 +185,5 @@ CONTACT_PHONE = '+33 1 23 45 67 89'  # Numéro de contact de l'agence
 
 # Login/Logout URLs
 LOGIN_REDIRECT_URL = 'home'
-LOGOUT_REDIRECT_URL = 'home'
+LOGOUT_REDIRECT_URL = 'account_login'  # Redirige vers la page de connexion après déconnexion
 ACCOUNT_LOGOUT_ON_GET = True

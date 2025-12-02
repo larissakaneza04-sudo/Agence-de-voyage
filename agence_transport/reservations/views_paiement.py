@@ -91,11 +91,11 @@ class PaiementCreateView(LoginRequiredMixin, CreateView):
                     
                     <p>Merci d'avoir choisi nos services !</p>
                     
-                    <p>Cordialement,<br>L'équipe Agence Transport</p>
+                    <p>Cordialement,<br>L'équipe Larissa Inspiration spirit travel</p>
                 </div>
                 
                 <div style="background-color: #f8f9fa; padding: 15px; text-align: center; font-size: 12px; color: #6c757d;">
-                    <p>© {timezone.now().year} Agence Transport - Tous droits réservés</p>
+                    <p>© {timezone.now().year} Larissa Inspiration spirit travel - Tous droits réservés</p>
                 </div>
             </body>
         </html>

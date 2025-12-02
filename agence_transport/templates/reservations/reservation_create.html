@@ -113,11 +113,11 @@
                                             </tr>
                                             <tr>
                                                 <th>Prix unitaire</th>
-                                                <td id="prix_unitaire">{{ horaire.prix_base }} €</td>
+                                                <td id="prix_unitaire">{{ horaire.prix_base }} Fbu</td>
                                             </tr>
                                             <tr>
                                                 <th>Total</th>
-                                                <td id="prix_total">0.00 €</td>
+                                                <td id="prix_total">0.00 Fbu</td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -159,14 +159,14 @@
                 try {
                     const nb = parseInt(nombreBillets.value) || 0;
                     if (isNaN(nb) || nb < 0) {
-                        prixTotal.textContent = '0.00 €';
+                        prixTotal.textContent = '0.00 Fbu';
                         return;
                     }
                     const total = (nb * prixUnitaire).toFixed(2);
-                    prixTotal.textContent = total + ' €';
+                    prixTotal.textContent = total + ' Fbu';
                 } catch (e) {
                     console.error('Erreur lors du calcul du total :', e);
-                    prixTotal.textContent = '0.00 €';
+                    prixTotal.textContent = '0.00 Fbu';
                 }
             }
             
@@ -180,7 +180,7 @@
         } else {
             console.error('Éléments du formulaire non trouvés');
             if (prixTotal) {
-                prixTotal.textContent = '0.00 €';
+                prixTotal.textContent = '0.00 Fbu';
             }
         }
     });

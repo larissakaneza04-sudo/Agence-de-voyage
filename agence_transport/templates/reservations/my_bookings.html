@@ -32,7 +32,7 @@
                                     </div>
                                     <div class="col-md-2">
                                         <span class="d-block d-md-none text-muted small">Montant</span>
-                                        <span class="fw-bold">{{ reservation.montant_total }} €</span>
+                                        <span class="fw-bold">{{ reservation.montant_total }} Fbu</span>
                                     </div>
                                     <div class="col-md-3">
                                         <span class="badge bg-{{ reservation.get_status_badge_class }} text-uppercase">
@@ -98,7 +98,7 @@
                                                 <span class="badge bg-secondary ms-2">{{ billet.get_type_billet_display }}</span>
                                             </div>
                                             <div>
-                                                <span class="fw-bold">{{ billet.prix }} €</span>
+                                                <span class="fw-bold">{{ billet.prix }} Fbu</span>
                                             </div>
                                         </div>
                                         <div class="mt-1">
@@ -118,7 +118,7 @@
                                 <div class="mt-3">
                                     <div class="d-flex justify-content-between fw-bold">
                                         <span>Total :</span>
-                                        <span>{{ reservation.montant_total }} €</span>
+                                        <span>{{ reservation.montant_total }} Fbu</span>
                                     </div>
                                     {% if reservation.paiement %}
                                     <div class="d-flex justify-content-between">

@@ -11,7 +11,7 @@ urlpatterns = [
     path('', views.HomeView.as_view(), name='home'),
     path('rechercher/', SearchView.as_view(), name='search'),
     path('a-propos/', TemplateView.as_view(template_name='reservations/a_propos.html'), name='a-propos'),
-    path('contact/', TemplateView.as_view(template_name='reservations/contact.html'), name='contact'),
+    path('contact/', views.ContactView.as_view(), name='contact'),
     path('mentions-legales/', TemplateView.as_view(template_name='reservations/mentions_legales.html'), name='mentions-legales'),
     path('cgu/', TemplateView.as_view(template_name='reservations/cgu.html'), name='cgu'),
     
