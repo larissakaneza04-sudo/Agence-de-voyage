@@ -8,10 +8,14 @@ from django.http import JsonResponse
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, FormView
 from django.urls import reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.messages.views import SuccessMessageMixin
 from django.core.exceptions import PermissionDenied
 from django.template import RequestContext
-from django.http import HttpResponseForbidden, HttpResponseServerError, HttpResponseNotFound
-from .models import *
+from django.http import HttpResponseForbidden, HttpResponseServerError, HttpResponseNotFound, JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.db.models import Q
+from .models import Horaire, Gare, Trajet, Reservation, Client, Billet, Remboursement, User, Ville
+from .forms import VilleForm, TrajetForm, HoraireForm, GareForm
 from .forms import ContactForm, ClientForm, ReservationForm, PaiementForm, RemboursementForm, FiltreHorairesForm
 
 class SearchView(ListView):
@@ -564,3 +568,404 @@ def handler404(request, exception=None, template_name='errors/404.html'):
 
 def handler500(request, template_name='errors/500.html'):
     return render(request, template_name, status=500)
+
+# Vues pour la gestion des gares
+class GareListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    model = Gare
+    template_name = 'reservations/gares/gare_list.html'
+    context_object_name = 'gares'
+    paginate_by = 15
+    
+    def test_func(self):
+        return self.request.user.is_staff
+    
+    def get_queryset(self):
+        queryset = Gare.objects.select_related('ville').order_by('ville__nom', 'nom')
+        
+        # Filtrage par ville
+        ville_id = self.request.GET.get('ville')
+        if ville_id:
+            queryset = queryset.filter(ville_id=ville_id)
+            
+        # Filtrage par recherche
+        search = self.request.GET.get('q')
+        if search:
+            queryset = queryset.filter(
+                Q(nom__icontains=search) |
+                Q(adresse__icontains=search) |
+                Q(ville__nom__icontains=search)
+            )
+            
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['villes'] = Ville.objects.all().order_by('nom')
+        context['filter_ville'] = self.request.GET.get('ville', '')
+        context['search'] = self.request.GET.get('q', '')
+        return context
+
+@login_required
+def ajouter_gare(request):
+    """
+    Vue pour l'ajout d'une nouvelle gare
+    """
+    if not request.user.is_staff:
+        return redirect('account_login')
+        
+    if request.method == 'POST':
+        form = GareForm(request.POST)
+        if form.is_valid():
+            try:
+                gare = form.save()
+                messages.success(request, f'La gare {gare.nom} a été ajoutée avec succès.')
+                return redirect('reservations:gare-list')
+            except Exception as e:
+                messages.error(request, f'Une erreur est survenue : {str(e)}')
+    else:
+        form = GareForm()
+    
+    return render(request, 'reservations/gares/gare_form.html', {
+        'form': form,
+        'title': 'Ajouter une gare',
+        'btn_text': 'Ajouter',
+        'villes': Ville.objects.all().order_by('nom')
+    })
+
+class GareUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = Gare
+    form_class = GareForm
+    template_name = 'reservations/gares/gare_form.html'
+    context_object_name = 'gare'
+    
+    def test_func(self):
+        return self.request.user.is_staff
+    
+    def get_success_url(self):
+        messages.success(self.request, 'La gare a été mise à jour avec succès.')
+        return reverse_lazy('reservations:gare-list')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Modifier la gare'
+        context['btn_text'] = 'Mettre à jour'
+        context['villes'] = Ville.objects.all().order_by('nom')
+        return context
+
+class GareDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Gare
+    template_name = 'reservations/gares/gare_confirm_delete.html'
+    success_url = reverse_lazy('reservations:gare-list')
+    
+    def test_func(self):
+        return self.request.user.is_staff
+    
+    def delete(self, request, *args, **kwargs):
+        gare = self.get_object()
+        
+        # Vérifier s'il y a des trajets associés à cette gare
+        if gare.departs.exists() or gare.arrivees.exists():
+            messages.error(
+                request,
+                "Impossible de supprimer cette gare car elle est utilisée dans des trajets."
+            )
+            return redirect('reservations:gare-list')
+        
+        messages.success(request, f'La gare {gare.nom} a été supprimée avec succès.')
+        return super().delete(request, *args, **kwargs)
+
+# Vues pour la gestion des horaires
+class HoraireListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    model = Horaire
+    template_name = 'reservations/horaires/horaire_list.html'
+    context_object_name = 'horaires'
+    paginate_by = 15
+    
+    def test_func(self):
+        return self.request.user.is_staff
+    
+    def get_queryset(self):
+        queryset = Horaire.objects.select_related(
+            'trajet__depart__ville', 
+            'trajet__arrivee__ville'
+        ).order_by('-date_depart')
+        
+        # Filtrage par trajet
+        trajet_id = self.request.GET.get('trajet')
+        if trajet_id:
+            queryset = queryset.filter(trajet_id=trajet_id)
+            
+        # Filtrage par date de départ
+        date_depart = self.request.GET.get('date_depart')
+        if date_depart:
+            try:
+                date_obj = datetime.strptime(date_depart, '%Y-%m-%d').date()
+                next_day = date_obj + timedelta(days=1)
+                queryset = queryset.filter(
+                    date_depart__date__gte=date_obj,
+                    date_depart__date__lt=next_day
+                )
+            except ValueError:
+                pass
+                
+        # Filtrage par statut (passé/à venir)
+        statut = self.request.GET.get('statut')
+        now = timezone.now()
+        if statut == 'passe':
+            queryset = queryset.filter(date_depart__lt=now)
+        elif statut == 'a_venir':
+            queryset = queryset.filter(date_depart__gte=now)
+            
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['trajets'] = Trajet.objects.select_related('depart__ville', 'arrivee__ville').all()
+        context['filter_trajet'] = self.request.GET.get('trajet', '')
+        context['filter_date'] = self.request.GET.get('date_depart', '')
+        context['filter_statut'] = self.request.GET.get('statut', '')
+        return context
+
+@login_required
+def ajouter_horaire(request):
+    """
+    Vue pour l'ajout d'un nouvel horaire
+    """
+    if not request.user.is_staff:
+        return redirect('account_login')
+        
+    if request.method == 'POST':
+        form = HoraireForm(request.POST)
+        if form.is_valid():
+            try:
+                horaire = form.save()
+                messages.success(request, f"L'horaire a été ajouté avec succès.")
+                return redirect('reservations:horaire-list')
+            except Exception as e:
+                messages.error(request, f'Une erreur est survenue : {str(e)}')
+    else:
+        form = HoraireForm()
+    
+    return render(request, 'reservations/horaires/horaire_form.html', {
+        'form': form,
+        'title': 'Ajouter un horaire',
+        'btn_text': 'Ajouter'
+    })
+
+class HoraireUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = Horaire
+    form_class = HoraireForm
+    template_name = 'reservations/horaires/horaire_form.html'
+    context_object_name = 'horaire'
+    
+    def test_func(self):
+        return self.request.user.is_staff
+    
+    def get_success_url(self):
+        messages.success(self.request, "L'horaire a été mis à jour avec succès.")
+        return reverse_lazy('reservations:horaire-list')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Modifier l\'horaire'
+        context['btn_text'] = 'Mettre à jour'
+        return context
+
+class HoraireDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Horaire
+    template_name = 'reservations/horaires/horaire_confirm_delete.html'
+    success_url = reverse_lazy('reservations:horaire-list')
+    
+    def test_func(self):
+        return self.request.user.is_staff
+    
+    def delete(self, request, *args, **kwargs):
+        horaire = self.get_object()
+        
+        # Vérifier s'il y a des réservations pour cet horaire
+        if horaire.reservations.exists():
+            messages.error(
+                request,
+                "Impossible de supprimer cet horaire car il a des réservations associées."
+            )
+            return redirect('reservations:horaire-list')
+        
+        messages.success(request, "L'horaire a été supprimé avec succès.")
+        return super().delete(request, *args, **kwargs)
+
+# Vues pour la gestion des trajets
+class TrajetListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    model = Trajet
+    template_name = 'reservations/trajets/trajet_list.html'
+    context_object_name = 'trajets'
+    paginate_by = 10
+    
+    def test_func(self):
+        return self.request.user.is_staff
+    
+    def get_queryset(self):
+        queryset = Trajet.objects.select_related('depart__ville', 'arrivee__ville')
+        
+        # Filtrage par gare de départ
+        depart = self.request.GET.get('depart')
+        if depart:
+            queryset = queryset.filter(depart_id=depart)
+            
+        # Filtrage par gare d'arrivée
+        arrivee = self.request.GET.get('arrivee')
+        if arrivee:
+            queryset = queryset.filter(arrivee_id=arrivee)
+            
+        # Filtrage par statut actif/inactif
+        actif = self.request.GET.get('actif')
+        if actif == '1':
+            queryset = queryset.filter(actif=True)
+        elif actif == '0':
+            queryset = queryset.filter(actif=False)
+            
+        return queryset.order_by('depart__ville__nom', 'arrivee__ville__nom')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['gares'] = Gare.objects.select_related('ville').order_by('ville__nom', 'nom')
+        context['filter_depart'] = self.request.GET.get('depart', '')
+        context['filter_arrivee'] = self.request.GET.get('arrivee', '')
+        context['filter_actif'] = self.request.GET.get('actif', '')
+        return context
+
+@login_required
+def ajouter_trajet(request):
+    """
+    Vue pour l'ajout d'un nouveau trajet
+    """
+    if not request.user.is_staff:
+        return redirect('account_login')
+        
+    if request.method == 'POST':
+        form = TrajetForm(request.POST)
+        if form.is_valid():
+            try:
+                trajet = form.save()
+                messages.success(request, f'Le trajet {trajet} a été ajouté avec succès.')
+                return redirect('reservations:trajet-list')
+            except Exception as e:
+                messages.error(request, f'Une erreur est survenue : {str(e)}')
+    else:
+        form = TrajetForm()
+    
+    return render(request, 'reservations/trajets/trajet_form.html', {
+        'form': form,
+        'title': 'Ajouter un trajet',
+        'btn_text': 'Ajouter'
+    })
+
+class TrajetUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = Trajet
+    form_class = TrajetForm
+    template_name = 'reservations/trajets/trajet_form.html'
+    context_object_name = 'trajet'
+    
+    def test_func(self):
+        return self.request.user.is_staff
+    
+    def get_success_url(self):
+        messages.success(self.request, 'Le trajet a été mis à jour avec succès.')
+        return reverse_lazy('reservations:trajet-list')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Modifier le trajet'
+        context['btn_text'] = 'Mettre à jour'
+        return context
+
+class TrajetDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Trajet
+    template_name = 'reservations/trajets/trajet_confirm_delete.html'
+    success_url = reverse_lazy('reservations:trajet-list')
+    
+    def test_func(self):
+        return self.request.user.is_staff
+    
+    def delete(self, request, *args, **kwargs):
+        trajet = self.get_object()
+        messages.success(request, f'Le trajet {trajet} a été supprimé avec succès.')
+        return super().delete(request, *args, **kwargs)
+
+def ajouter_ville(request):
+    """
+    Vue pour l'ajout d'une nouvelle ville
+    """
+    if not request.user.is_authenticated or not request.user.is_staff:
+        return redirect('account_login')
+        
+    if request.method == 'POST':
+        form = VilleForm(request.POST)
+        if form.is_valid():
+            try:
+                ville = form.save()
+                messages.success(request, f'La ville {ville.nom} a été ajoutée avec succès.')
+                return redirect('reservations:ville-list')
+            except Exception as e:
+                messages.error(request, f'Une erreur est survenue : {str(e)}')
+    else:
+        form = VilleForm()
+    
+    return render(request, 'reservations/villes/ajouter_ville.html', {
+        'form': form,
+        'title': 'Ajouter une ville'
+    })
+
+# Vues pour la gestion des villes
+class VilleListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    model = Ville
+    template_name = 'reservations/villes/ville_list.html'
+    context_object_name = 'villes'
+    paginate_by = 10
+    
+    def test_func(self):
+        return self.request.user.is_staff
+
+class VilleCreateView(LoginRequiredMixin, UserPassesTestMixin, SuccessMessageMixin, CreateView):
+    model = Ville
+    fields = ['nom', 'code']
+    template_name = 'reservations/villes/ville_form.html'
+    success_url = reverse_lazy('reservations:ville-list')
+    success_message = 'La ville a été ajoutée avec succès.'
+    
+    def test_func(self):
+        return self.request.user.is_staff
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Ajouter une ville'
+        context['btn_text'] = 'Ajouter'
+        return context
+
+class VilleUpdateView(LoginRequiredMixin, UserPassesTestMixin, SuccessMessageMixin, UpdateView):
+    model = Ville
+    fields = ['nom', 'code']
+    template_name = 'reservations/villes/ville_form.html'
+    success_url = reverse_lazy('reservations:ville-list')
+    success_message = 'La ville a été mise à jour avec succès.'
+    
+    def test_func(self):
+        return self.request.user.is_staff
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Modifier la ville'
+        context['btn_text'] = 'Mettre à jour'
+        return context
+
+class VilleDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Ville
+    template_name = 'reservations/villes/ville_confirm_delete.html'
+    success_url = reverse_lazy('reservations:ville-list')
+    success_message = 'La ville a été supprimée avec succès.'
+    
+    def test_func(self):
+        return self.request.user.is_staff
+        
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, self.success_message)
+        return super().delete(request, *args, **kwargs)

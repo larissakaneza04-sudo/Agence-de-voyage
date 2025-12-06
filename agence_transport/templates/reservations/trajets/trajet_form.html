@@ -1,0 +1,189 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-route me-2"></i>{{ title }}</h4>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.depart.id_for_label }}" class="form-label">
+                                        {{ form.depart.label }}
+                                        {% if form.depart.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    {{ form.depart }}
+                                    {% if form.depart.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.depart.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.arrivee.id_for_label }}" class="form-label">
+                                        {{ form.arrivee.label }}
+                                        {% if form.arrivee.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    {{ form.arrivee }}
+                                    {% if form.arrivee.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.arrivee.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.duree.id_for_label }}" class="form-label">
+                                        {{ form.duree.label }}
+                                        {% if form.duree.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    {{ form.duree }}
+                                    {% if form.duree.help_text %}
+                                        <small class="form-text text-muted">{{ form.duree.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.duree.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.duree.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.distance.id_for_label }}" class="form-label">
+                                        {{ form.distance.label }}
+                                        {% if form.distance.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    <div class="input-group">
+                                        {{ form.distance }}
+                                        <span class="input-group-text">km</span>
+                                    </div>
+                                    {% if form.distance.help_text %}
+                                        <small class="form-text text-muted">{{ form.distance.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.distance.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.distance.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-check form-switch mb-4">
+                            {{ form.actif }}
+                            <label class="form-check-label" for="{{ form.actif.id_for_label }}">
+                                {{ form.actif.label }}
+                            </label>
+                            {% if form.actif.help_text %}
+                                <small class="form-text text-muted d-block">{{ form.actif.help_text }}</small>
+                            {% endif %}
+                            {% if form.actif.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.actif.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'reservations:trajet-list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-1"></i> Retour à la liste
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> {{ btn_text }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialisation des sélecteurs avec Select2 pour une meilleure expérience utilisateur
+    const departSelect = document.getElementById('{{ form.depart.id_for_label }}');
+    const arriveeSelect = document.getElementById('{{ form.arrivee.id_for_label }}');
+    
+    if (departSelect && arriveeSelect) {
+        // Si les sélecteurs existent, on peut ajouter des améliorations
+        
+        // Désactiver la gare d'arrivée si c'est la même que la gare de départ
+        function updateArriveeOptions() {
+            const selectedDepart = departSelect.value;
+            
+            for (let i = 0; i < arriveeSelect.options.length; i++) {
+                const option = arriveeSelect.options[i];
+                option.disabled = option.value === selectedDepart;
+                
+                if (option.disabled && option.value === arriveeSelect.value) {
+                    arriveeSelect.value = '';
+                }
+            }
+        }
+        
+        // Désactiver la gare de départ si c'est la même que la gare d'arrivée
+        function updateDepartOptions() {
+            const selectedArrivee = arriveeSelect.value;
+            
+            for (let i = 0; i < departSelect.options.length; i++) {
+                const option = departSelect.options[i];
+                option.disabled = option.value === selectedArrivee;
+                
+                if (option.disabled && option.value === departSelect.value) {
+                    departSelect.value = '';
+                }
+            }
+        }
+        
+        // Écouter les changements sur les sélecteurs
+        departSelect.addEventListener('change', updateArriveeOptions);
+        arriveeSelect.addEventListener('change', updateDepartOptions);
+        
+        // Initialiser l'état des options
+        updateArriveeOptions();
+        updateDepartOptions();
+    }
+    
+    // Validation du formulaire
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    }
+});
+</script>
+{% endblock %}

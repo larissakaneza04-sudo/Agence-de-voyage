@@ -45,7 +45,7 @@ INSTALLED_APPS = [
     'crispy_bootstrap5',
     'allauth',
     'allauth.account',
-    'allauth.socialaccount',
+    # 'allauth.socialaccount',  # Désactivé temporairement
     'debug_toolbar',
     
     # Local apps
@@ -153,6 +153,16 @@ AUTHENTICATION_BACKENDS = [
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
+# Configuration d'Allauth
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_EMAIL_VERIFICATION = 'none'  # 'mandatory' pour forcer la vérification d'email
+
+# Désactive les comptes sociaux
+SOCIALACCOUNT_ENABLED = False
+
 SITE_ID = 1
 
 # Crispy Forms
@@ -184,6 +194,6 @@ SITE_URL = 'http://127.0.0.1:8000'  # URL de base du site
 CONTACT_PHONE = '+33 1 23 45 67 89'  # Numéro de contact de l'agence
 
 # Login/Logout URLs
-LOGIN_REDIRECT_URL = 'home'
-LOGOUT_REDIRECT_URL = 'account_login'  # Redirige vers la page de connexion après déconnexion
+LOGIN_REDIRECT_URL = 'reservations:home'  # Utilisation du namespace 'reservations'
+LOGOUT_REDIRECT_URL = 'reservations:home'  # Redirige vers la page d'accueil après déconnexion
 ACCOUNT_LOGOUT_ON_GET = True

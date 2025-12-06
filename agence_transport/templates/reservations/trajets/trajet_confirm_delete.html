@@ -1,0 +1,80 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Supprimer le trajet{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Confirmation de suppression</h4>
+                </div>
+                <div class="card-body">
+                    <h5>Êtes-vous sûr de vouloir supprimer ce trajet ?</h5>
+                    
+                    <div class="alert alert-warning">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                            </div>
+                            <div>
+                                <strong>Attention :</strong> Cette action est irréversible. Tous les horaires associés à ce trajet seront également supprimés.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h6 class="card-title">Détails du trajet</h6>
+                            <dl class="row mb-0">
+                                <dt class="col-sm-4">Départ :</dt>
+                                <dd class="col-sm-8">
+                                    <strong>{{ trajet.depart.ville.nom }}</strong> - {{ trajet.depart.nom }}
+                                </dd>
+                                
+                                <dt class="col-sm-4">Arrivée :</dt>
+                                <dd class="col-sm-8">
+                                    <strong>{{ trajet.arrivee.ville.nom }}</strong> - {{ trajet.arrivee.nom }}
+                                </dd>
+                                
+                                <dt class="col-sm-4">Durée :</dt>
+                                <dd class="col-sm-8">
+                                    {% with duree=trajet.duree %}
+                                        {{ duree.hours }}h{{ duree.minutes|stringformat:'02d' }}
+                                    {% endwith %}
+                                </dd>
+                                
+                                <dt class="col-sm-4">Distance :</dt>
+                                <dd class="col-sm-8">{{ trajet.distance }} km</dd>
+                                
+                                <dt class="col-sm-4">Statut :</dt>
+                                <dd class="col-sm-8">
+                                    {% if trajet.actif %}
+                                        <span class="badge bg-success">Actif</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Inactif</span>
+                                    {% endif %}
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'reservations:trajet-list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-1"></i> Annuler
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash-alt me-1"></i> Confirmer la suppression
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

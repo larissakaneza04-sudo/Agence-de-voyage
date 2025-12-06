@@ -1,0 +1,151 @@
+{% extends "base/base.html" %}
+{% load i18n %}
+{% load account %}
+
+{% block title %}Connexion - Agence de Transport{% endblock %}
+
+{% block extra_css %}
+<style>
+    .login-container {
+        max-width: 500px;
+        margin: 2rem auto;
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        background: white;
+    }
+    
+    .login-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .login-header i {
+        font-size: 3rem;
+        color: #198754; /* Couleur verte de Bootstrap */
+        margin-bottom: 1rem;
+    }
+    
+    .form-floating {
+        margin-bottom: 1.5rem;
+    }
+    
+    .btn-login {
+        background-color: #198754;
+        border: none;
+        padding: 0.8rem 2rem;
+        font-weight: 600;
+        width: 100%;
+        margin-top: 1rem;
+    }
+    
+    .btn-login:hover {
+        background-color: #157347;
+    }
+    
+    .login-footer {
+        text-align: center;
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #eee;
+    }
+    
+    
+    .divider {
+        display: flex;
+        align-items: center;
+        text-align: center;
+        margin: 1.5rem 0;
+        color: #6c757d;
+    }
+    
+    .divider::before,
+    .divider::after {
+        content: '';
+        flex: 1;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .divider:not(:empty)::before {
+        margin-right: 1rem;
+    }
+    
+    .divider:not(:empty)::after {
+        margin-left: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-header">
+        <i class="fas fa-user-circle"></i>
+        <h2>Connexion à votre compte</h2>
+        <p class="text-muted">Entrez vos identifiants pour accéder à votre espace personnel</p>
+    </div>
+    
+    {% if form.errors %}
+    <div class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        Identifiants incorrects. Veuillez réessayer.
+    </div>
+    {% endif %}
+    
+    <form method="POST" action="{% url 'account_login' %}">
+        {% csrf_token %}
+        
+        <div class="form-floating mb-3">
+            <input type="email" name="login" class="form-control" id="id_login" placeholder="Adresse e-mail" required autofocus>
+            <label for="id_login">Adresse e-mail</label>
+        </div>
+        
+        <div class="form-floating mb-3">
+            <input type="password" name="password" class="form-control" id="id_password" placeholder="Mot de passe" required>
+            <label for="id_password">Mot de passe</label>
+        </div>
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="remember" id="id_remember">
+                <label class="form-check-label" for="id_remember">
+                    Se souvenir de moi
+                </label>
+            </div>
+            <a href="{% url 'account_reset_password' %}" class="text-decoration-none">Mot de passe oublié ?</a>
+        </div>
+        
+        {% if redirect_field_value %}
+        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+        {% endif %}
+        
+        <button class="btn btn-primary btn-lg btn-login" type="submit">
+            <i class="fas fa-sign-in-alt me-2"></i>Se connecter
+        </button>
+    </form>
+    
+    
+    <div class="login-footer">
+        <p class="mb-0">Vous n'avez pas de compte ? 
+            <a href="{% url 'account_signup' %}" class="text-decoration-none fw-bold">S'inscrire</a>
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Animation au chargement de la page
+    document.addEventListener('DOMContentLoaded', function() {
+        const loginContainer = document.querySelector('.login-container');
+        loginContainer.style.opacity = '0';
+        loginContainer.style.transform = 'translateY(20px)';
+        loginContainer.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        
+        // Démarrer l'animation après un court délai
+        setTimeout(() => {
+            loginContainer.style.opacity = '1';
+            loginContainer.style.transform = 'translateY(0)';
+        }, 100);
+    });
+</script>
+{% endblock %}

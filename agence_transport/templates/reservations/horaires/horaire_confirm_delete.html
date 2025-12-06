@@ -1,0 +1,63 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Supprimer l'horaire{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Confirmer la suppression</h4>
+                </div>
+                <div class="card-body">
+                    <p class="lead">
+                        Êtes-vous sûr de vouloir supprimer cet horaire ?
+                    </p>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <strong>Attention :</strong> Cette action est irréversible. Toutes les données associées à cet horaire seront perdues.
+                    </div>
+                    
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Détails de l'horaire</h5>
+                            <ul class="list-unstyled">
+                                <li><strong>Trajet :</strong> {{ object.trajet.depart.ville.nom }} → {{ object.trajet.arrivee.ville.nom }}</li>
+                                <li><strong>Départ :</strong> {{ object.date_depart|date:"d/m/Y H:i" }}</li>
+                                <li><strong>Arrivée :</strong> {{ object.date_arrivee|date:"d/m/Y H:i" }}</li>
+                                <li><strong>Prix :</strong> {{ object.prix_base|floatformat:0 }} FCFA</li>
+                                <li><strong>Places disponibles :</strong> {{ object.places_disponibles }}</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    {% if object.reservations.exists %}
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Attention :</strong> Cet horaire a {{ object.reservations.count }} réservation(s) associée(s). 
+                            La suppression n'est pas possible.
+                        </div>
+                    {% endif %}
+                    
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'reservations:horaire-list' %}" class="btn btn-outline-secondary me-md-2">
+                                <i class="fas fa-times me-1"></i> Annuler
+                            </a>
+                            {% if not object.reservations.exists %}
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-trash-alt me-1"></i> Confirmer la suppression
+                                </button>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

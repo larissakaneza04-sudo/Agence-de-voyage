@@ -3,8 +3,226 @@ from django.forms import ModelForm, inlineformset_factory
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from django.core.validators import EmailValidator
+from django.core.validators import MinValueValidator
+from django.forms.widgets import NumberInput
 from .models import Billet, Client, Paiement, Reservation, Ville, Gare, Trajet, Horaire, Remboursement, TicketBonus
+from datetime import datetime, timedelta
+
+class GareForm(forms.ModelForm):
+    """
+    Formulaire pour l'ajout et la modification d'une gare
+    """
+    class Meta:
+        model = Gare
+        fields = ['nom', 'ville', 'adresse']
+        widgets = {
+            'nom': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nom de la gare',
+                'required': True
+            }),
+            'ville': forms.Select(attrs={
+                'class': 'form-select',
+                'required': True,
+                'hx-get': '/reservations/gares-par-ville/',
+                'hx-target': '#id_ville',
+                'hx-trigger': 'change'
+            }),
+            'adresse': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'Adresse complète de la gare',
+                'required': True
+            })
+        }
+        labels = {
+            'nom': 'Nom de la gare',
+            'ville': 'Ville',
+            'adresse': 'Adresse complète'
+        }
+        help_texts = {
+            'nom': 'Nom officiel de la gare',
+            'adresse': 'Adresse complète incluant la rue, le code postal et la ville'
+        }
+
+    def clean_nom(self):
+        nom = self.cleaned_data.get('nom')
+        ville = self.cleaned_data.get('ville')
+        
+        # Vérifier l'unicité du nom de la gare dans la même ville
+        if nom and ville:
+            queryset = Gare.objects.filter(nom__iexact=nom, ville=ville)
+            if self.instance and self.instance.pk:
+                queryset = queryset.exclude(pk=self.instance.pk)
+            if queryset.exists():
+                raise forms.ValidationError('Une gare avec ce nom existe déjà dans cette ville.')
+        
+        return nom.strip()
+
+class VilleForm(forms.ModelForm):
+    """
+    Formulaire pour l'ajout et la modification d'une ville
+    """
+    class Meta:
+        model = Ville
+        fields = ['nom', 'code']
+        widgets = {
+            'nom': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Entrez le nom de la ville',
+                'required': True
+            }),
+            'code': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Entrez le code de la ville',
+                'style': 'text-transform: uppercase;',
+                'required': True
+            })
+        }
+        labels = {
+            'nom': 'Nom de la ville',
+            'code': 'Code (3 lettres)'
+        }
+        help_texts = {
+            'code': 'Code de la ville (sera converti en majuscules)'
+        }
+
+    def clean_code(self):
+        return self.cleaned_data.get('code', '').upper()
+
+class HoraireForm(forms.ModelForm):
+    """
+    Formulaire pour l'ajout et la modification d'un horaire
+    """
+    class Meta:
+        model = Horaire
+        fields = ['trajet', 'date_depart', 'date_arrivee', 'prix_base', 'places_disponibles']
+        widgets = {
+            'trajet': forms.Select(attrs={
+                'class': 'form-select',
+                'required': True
+            }),
+            'date_depart': forms.DateTimeInput(attrs={
+                'type': 'datetime-local',
+                'class': 'form-control',
+                'required': True
+            }),
+            'date_arrivee': forms.DateTimeInput(attrs={
+                'type': 'datetime-local',
+                'class': 'form-control',
+                'required': True
+            }),
+            'prix_base': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 0,
+                'step': '0.01',
+                'required': True
+            }),
+            'places_disponibles': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 1,
+                'required': True
+            })
+        }
+        labels = {
+            'trajet': 'Trajet',
+            'date_depart': 'Date et heure de départ',
+            'date_arrivee': 'Date et heure d\'arrivée',
+            'prix_base': 'Prix de base (FCFA)',
+            'places_disponibles': 'Nombre de places disponibles'
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        date_depart = cleaned_data.get('date_depart')
+        date_arrivee = cleaned_data.get('date_arrivee')
+        trajet = cleaned_data.get('trajet')
+
+        # Vérifier que la date d'arrivée est postérieure à la date de départ
+        if date_depart and date_arrivee and date_arrivee <= date_depart:
+            raise forms.ValidationError({
+                'date_arrivee': 'La date d\'arrivée doit être postérieure à la date de départ.'
+            })
+
+        # Vérifier que l'horaire ne chevauche pas un autre horaire pour le même trajet
+        if date_depart and date_arrivee and trajet:
+            # Vérifier les chevauchements avec d'autres horaires du même trajet
+            queryset = Horaire.objects.filter(
+                trajet=trajet,
+                date_depart__lt=date_arrivee,
+                date_arrivee__gt=date_depart
+            )
+            
+            # Exclure l'instance actuelle si on est en mode édition
+            if self.instance and self.instance.pk:
+                queryset = queryset.exclude(pk=self.instance.pk)
+            
+            if queryset.exists():
+                raise forms.ValidationError(
+                    'Un horaire existe déjà pour ce trajet sur cette plage horaire.'
+                )
+
+        return cleaned_data
+
+class TrajetForm(forms.ModelForm):
+    """
+    Formulaire pour l'ajout et la modification d'un trajet
+    """
+    class Meta:
+        model = Trajet
+        fields = ['depart', 'arrivee', 'duree', 'distance', 'actif']
+        widgets = {
+            'depart': forms.Select(attrs={
+                'class': 'form-select',
+                'required': True
+            }),
+            'arrivee': forms.Select(attrs={
+                'class': 'form-select',
+                'required': True
+            }),
+            'duree': forms.TimeInput(attrs={
+                'type': 'time',
+                'class': 'form-control',
+                'required': True
+            }),
+            'distance': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 1,
+                'required': True
+            }),
+            'actif': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            })
+        }
+        labels = {
+            'depart': 'Gare de départ',
+            'arrivee': 'Gare d\'arrivée',
+            'duree': 'Durée du trajet',
+            'distance': 'Distance (km)',
+            'actif': 'Trajet actif'
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        depart = cleaned_data.get('depart')
+        arrivee = cleaned_data.get('arrivee')
+
+        if depart and arrivee and depart == arrivee:
+            raise forms.ValidationError({
+                'arrivee': 'La gare d\'arrivée doit être différente de la gare de départ.'
+            })
+
+        # Vérification de l'unicité du trajet
+        if depart and arrivee:
+            queryset = Trajet.objects.filter(depart=depart, arrivee=arrivee)
+            if self.instance and self.instance.pk:
+                queryset = queryset.exclude(pk=self.instance.pk)
+            if queryset.exists():
+                raise forms.ValidationError(
+                    'Un trajet entre ces deux gares existe déjà.'
+                )
+
+        return cleaned_data
 
 class ClientForm(forms.Form):
     """

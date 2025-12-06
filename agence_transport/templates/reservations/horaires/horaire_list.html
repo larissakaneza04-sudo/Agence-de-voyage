@@ -1,0 +1,209 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Gestion des horaires{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="far fa-clock me-2"></i>Gestion des horaires</h1>
+        <a href="{% url 'reservations:horaire-ajouter' %}" class="btn btn-success">
+            <i class="fas fa-plus me-1"></i> Nouvel horaire
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Filtres -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filtres</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="trajet" class="form-label">Trajet</label>
+                    <select name="trajet" id="trajet" class="form-select">
+                        <option value="">Tous les trajets</option>
+                        {% for trajet in trajets %}
+                            <option value="{{ trajet.id }}" {% if filter_trajet == trajet.id|stringformat:'s' %}selected{% endif %}>
+                                {{ trajet.depart.ville.nom }} → {{ trajet.arrivee.ville.nom }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="date_depart" class="form-label">Date de départ</label>
+                    <input type="date" class="form-control" id="date_depart" name="date_depart" value="{{ filter_date }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="statut" class="form-label">Statut</label>
+                    <select name="statut" id="statut" class="form-select">
+                        <option value="">Tous</option>
+                        <option value="a_venir" {% if filter_statut == 'a_venir' %}selected{% endif %}>À venir</option>
+                        <option value="passe" {% if filter_statut == 'passe' %}selected{% endif %}>Passés</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search me-1"></i> Filtrer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tableau des horaires -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Trajet</th>
+                            <th class="text-center">Départ</th>
+                            <th class="text-center">Arrivée</th>
+                            <th class="text-center">Prix</th>
+                            <th class="text-center">Places</th>
+                            <th class="text-center">Statut</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for horaire in horaires %}
+                        <tr>
+                            <td>
+                                <div class="fw-bold">{{ horaire.trajet.depart.ville.nom }} → {{ horaire.trajet.arrivee.ville.nom }}</div>
+                                <small class="text-muted">
+                                    {{ horaire.trajet.depart.nom }} → {{ horaire.trajet.arrivee.nom }}
+                                </small>
+                            </td>
+                            <td class="text-center">
+                                <div class="fw-bold">{{ horaire.date_depart|date:"d/m/Y" }}</div>
+                                <div class="text-muted">{{ horaire.date_depart|date:"H:i" }}</div>
+                            </td>
+                            <td class="text-center">
+                                <div class="fw-bold">{{ horaire.date_arrivee|date:"d/m/Y" }}</div>
+                                <div class="text-muted">{{ horaire.date_arrivee|date:"H:i" }}</div>
+                            </td>
+                            <td class="text-center">
+                                {{ horaire.prix_base|floatformat:0 }} FCFA
+                            </td>
+                            <td class="text-center">
+                                {{ horaire.places_disponibles }}
+                            </td>
+                            <td class="text-center">
+                                {% if horaire.date_depart > now %}
+                                    <span class="badge bg-success">À venir</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Passé</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <a href="{% url 'reservations:horaire-update' horaire.pk %}" class="btn btn-sm btn-outline-primary me-1" title="Modifier">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'reservations:horaire-delete' horaire.pk %}" class="btn btn-sm btn-outline-danger" title="Supprimer">
+                                    <i class="fas fa-trash-alt"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                                    <p class="mb-0">Aucun horaire trouvé</p>
+                                    <small>Commencez par ajouter un nouvel horaire</small>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <nav aria-label="Pagination" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if filter_trajet %}&trajet={{ filter_trajet }}{% endif %}{% if filter_date %}&date_depart={{ filter_date }}{% endif %}{% if filter_statut %}&statut={{ filter_statut }}{% endif %}">
+                                <i class="fas fa-angle-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if filter_trajet %}&trajet={{ filter_trajet }}{% endif %}{% if filter_date %}&date_depart={{ filter_date }}{% endif %}{% if filter_statut %}&statut={{ filter_statut }}{% endif %}">
+                                <i class="fas fa-angle-left"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% if filter_trajet %}&trajet={{ filter_trajet }}{% endif %}{% if filter_date %}&date_depart={{ filter_date }}{% endif %}{% if filter_statut %}&statut={{ filter_statut }}{% endif %}">
+                                    {{ num }}
+                                </a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if filter_trajet %}&trajet={{ filter_trajet }}{% endif %}{% if filter_date %}&date_depart={{ filter_date }}{% endif %}{% if filter_statut %}&statut={{ filter_statut }}{% endif %}">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if filter_trajet %}&trajet={{ filter_trajet }}{% endif %}{% if filter_date %}&date_depart={{ filter_date }}{% endif %}{% if filter_statut %}&statut={{ filter_statut }}{% endif %}">
+                                <i class="fas fa-angle-double-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Confirmation avant suppression
+    const deleteButtons = document.querySelectorAll('.btn-outline-danger');
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            if (!confirm('Êtes-vous sûr de vouloir supprimer cet horaire ? Cette action est irréversible.')) {
+                e.preventDefault();
+            }
+        });
+    });
+
+    // Mise en forme des champs de date
+    const dateInputs = document.querySelectorAll('input[type="date"]');
+    dateInputs.forEach(input => {
+        // Définir la date minimale sur aujourd'hui
+        const today = new Date();
+        const dd = String(today.getDate()).padStart(2, '0');
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const yyyy = today.getFullYear();
+        input.min = `${yyyy}-${mm}-${dd}`;
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,285 @@
+{% extends "base/base.html" %}
+{% load i18n %}
+{% load account %}
+
+{% block title %}Inscription - Agence de Transport{% endblock %}
+
+{% block extra_css %}
+<style>
+    .signup-container {
+        max-width: 600px;
+        margin: 2rem auto;
+        padding: 2.5rem;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        background: white;
+    }
+    
+    .signup-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .signup-header i {
+        font-size: 3rem;
+        color: #198754;
+        margin-bottom: 1rem;
+    }
+    
+    .form-floating {
+        margin-bottom: 1.5rem;
+    }
+    
+    .btn-signup {
+        background-color: #198754;
+        border: none;
+        padding: 0.8rem 2rem;
+        font-weight: 600;
+        width: 100%;
+        margin-top: 1rem;
+        font-size: 1.1rem;
+    }
+    
+    .btn-signup:hover {
+        background-color: #157347;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .login-footer {
+        text-align: center;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #eee;
+    }
+    
+    .form-text {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    
+    .password-requirements {
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .password-requirements h6 {
+        color: #198754;
+        margin-bottom: 0.5rem;
+    }
+    
+    .password-requirements ul {
+        padding-left: 1.2rem;
+        margin-bottom: 0;
+    }
+    
+    .password-requirements li {
+        margin-bottom: 0.3rem;
+        font-size: 0.9rem;
+    }
+    
+    .form-check {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-check-label a {
+        color: #198754;
+        text-decoration: none;
+    }
+    
+    .form-check-label a:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="signup-container">
+    <div class="signup-header">
+        <i class="fas fa-user-plus"></i>
+        <h2>Créez votre compte</h2>
+        <p class="text-muted">Rejoignez-nous en quelques secondes</p>
+    </div>
+    
+    {% if form.errors %}
+    <div class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        {% for field, errors in form.errors.items %}
+            {% for error in errors %}
+                {{ error }}
+            {% endfor %}
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <form method="POST" action="{% url 'account_signup' %}" class="needs-validation" novalidate>
+        {% csrf_token %}
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-floating mb-3">
+                    <input type="text" name="first_name" class="form-control" id="id_first_name" 
+                           placeholder="Prénom" required>
+                    <label for="id_first_name">Prénom</label>
+                    <div class="invalid-feedback">Veuillez entrer votre prénom.</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-floating mb-3">
+                    <input type="text" name="last_name" class="form-control" id="id_last_name" 
+                           placeholder="Nom" required>
+                    <label for="id_last_name">Nom</label>
+                    <div class="invalid-feedback">Veuillez entrer votre nom.</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-floating mb-3">
+            <input type="email" name="email" class="form-control" id="id_email" 
+                   placeholder="nom@exemple.com" required>
+            <label for="id_email">Adresse e-mail</label>
+            <div class="invalid-feedback">Veuillez entrer une adresse e-mail valide.</div>
+        </div>
+        
+        <div class="password-requirements mb-4">
+            <h6>Votre mot de passe doit contenir :</h6>
+            <ul>
+                <li>Au moins 8 caractères</li>
+                <li>Au moins une lettre majuscule</li>
+                <li>Au moins un chiffre</li>
+                <li>Au moins un caractère spécial (!@#$%^&*)</li>
+            </ul>
+        </div>
+        
+        <div class="form-floating mb-3">
+            <input type="password" name="password1" class="form-control" id="id_password1" 
+                   placeholder="Mot de passe" required>
+            <label for="id_password1">Mot de passe</label>
+        </div>
+        
+        <div class="form-floating mb-4">
+            <input type="password" name="password2" class="form-control" id="id_password2" 
+                   placeholder="Confirmer le mot de passe" required>
+            <label for="id_password2">Confirmer le mot de passe</label>
+        </div>
+        
+        <div class="form-check mb-4">
+            <input class="form-check-input" type="checkbox" id="terms" required>
+            <label class="form-check-label" for="terms">
+                J'accepte les <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">conditions d'utilisation</a> 
+                et la <a href="#" data-bs-toggle="modal" data-bs-target="#privacyModal">politique de confidentialité</a>
+            </label>
+            <div class="invalid-feedback">Vous devez accepter les conditions d'utilisation.</div>
+        </div>
+        
+        {% if redirect_field_value %}
+        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+        {% endif %}
+        
+        <button class="btn btn-primary btn-lg btn-signup" type="submit">
+            <i class="fas fa-user-plus me-2"></i>Créer mon compte
+        </button>
+    </form>
+    
+    <div class="login-footer">
+        <p class="mb-0">Vous avez déjà un compte ? 
+            <a href="{% url 'account_login' %}" class="text-decoration-none fw-bold">Se connecter</a>
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+<!-- Modal pour les conditions d'utilisation -->
+<div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="termsModalLabel">Conditions d'utilisation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                <h6>1. Acceptation des conditions</h6>
+                <p>En créant un compte, vous acceptez nos conditions d'utilisation.</p>
+                
+                <h6>2. Utilisation du service</h6>
+                <p>Le service doit être utilisé conformément aux lois en vigueur.</p>
+                
+                <h6>3. Réservation et paiement</h6>
+                <p>Les réservations sont soumises à disponibilité. Les paiements sont sécurisés.</p>
+                
+                <h6>4. Annulation et remboursement</h6>
+                <p>Consultez notre politique d'annulation pour plus de détails.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour la politique de confidentialité -->
+<div class="modal fade" id="privacyModal" tabindex="-1" aria-labelledby="privacyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="privacyModalLabel">Politique de confidentialité</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                <h6>1. Collecte des informations</h6>
+                <p>Nous collectons les informations nécessaires à la création de votre compte et à la gestion de vos réservations.</p>
+                
+                <h6>2. Utilisation des données</h6>
+                <p>Vos données sont utilisées pour fournir et améliorer nos services.</p>
+                
+                <h6>3. Protection des données</h6>
+                <p>Nous mettons en œuvre des mesures de sécurité pour protéger vos informations personnelles.</p>
+                
+                <h6>4. Partage des données</h6>
+                <p>Vos données ne sont pas partagées avec des tiers sans votre consentement.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+// Validation des champs du formulaire
+(function () {
+    'use strict'
+    
+    // Récupère les formulaires auxquels nous voulons ajouter des styles de validation
+    var forms = document.querySelectorAll('.needs-validation')
+    
+    // Boucle sur les champs et empêche la soumission
+    Array.prototype.slice.call(forms).forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (!form.checkValidity()) {
+                event.preventDefault()
+                event.stopPropagation()
+            }
+            
+            form.classList.add('was-validated')
+        }, false)
+    })
+    
+    // Animation au chargement de la page
+    document.addEventListener('DOMContentLoaded', function() {
+        const signupContainer = document.querySelector('.signup-container');
+        signupContainer.style.opacity = '0';
+        signupContainer.style.transform = 'translateY(20px)';
+        signupContainer.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        
+        setTimeout(() => {
+            signupContainer.style.opacity = '1';
+            signupContainer.style.transform = 'translateY(0)';
+        }, 100);
+    });
+})()
+</script>
+{% endblock %}

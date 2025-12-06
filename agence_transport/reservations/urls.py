@@ -1,7 +1,7 @@
 from django.urls import path
 from django.views.generic import TemplateView
 from . import views
-from .views import SearchView
+from .views import SearchView, ajouter_ville, ajouter_trajet, ajouter_horaire, ajouter_gare
 from .views_paiement import PaiementCreateView
 
 app_name = 'reservations'
@@ -36,4 +36,28 @@ urlpatterns = [
     path('admin/reservations/', views.GestionReservationsView.as_view(), name='gestion-reservations'),
     path('admin/remboursements/', views.GestionRemboursementsView.as_view(), name='gestion-remboursements'),
     path('admin/remboursements/<int:pk>/traiter/', views.TraiterRemboursementView.as_view(), name='traiter-remboursement'),
+    
+    # Gestion des villes
+    path('villes/', views.VilleListView.as_view(), name='ville-list'),
+    path('villes/ajouter/', ajouter_ville, name='ville-ajouter'),
+    path('villes/<int:pk>/modifier/', views.VilleUpdateView.as_view(), name='ville-update'),
+    path('villes/<int:pk>/supprimer/', views.VilleDeleteView.as_view(), name='ville-delete'),
+    
+    # Gestion des trajets
+    path('trajets/', views.TrajetListView.as_view(), name='trajet-list'),
+    path('trajets/ajouter/', ajouter_trajet, name='trajet-ajouter'),
+    path('trajets/<int:pk>/modifier/', views.TrajetUpdateView.as_view(), name='trajet-update'),
+    path('trajets/<int:pk>/supprimer/', views.TrajetDeleteView.as_view(), name='trajet-delete'),
+    
+    # Gestion des gares
+    path('gares/', views.GareListView.as_view(), name='gare-list'),
+    path('gares/ajouter/', ajouter_gare, name='gare-ajouter'),
+    path('gares/<int:pk>/modifier/', views.GareUpdateView.as_view(), name='gare-update'),
+    path('gares/<int:pk>/supprimer/', views.GareDeleteView.as_view(), name='gare-delete'),
+    
+    # Gestion des horaires
+    path('horaires/', views.HoraireListView.as_view(), name='horaire-list'),
+    path('horaires/ajouter/', ajouter_horaire, name='horaire-ajouter'),
+    path('horaires/<int:pk>/modifier/', views.HoraireUpdateView.as_view(), name='horaire-update'),
+    path('horaires/<int:pk>/supprimer/', views.HoraireDeleteView.as_view(), name='horaire-delete'),
 ]
