@@ -25,10 +25,15 @@ class SearchView(ListView):
     paginate_by = 10
 
     def get_queryset(self):
+        # Filtrer uniquement les horaires futurs avec des places disponibles
+        now = timezone.now()
         queryset = Horaire.objects.filter(
-            date_depart__gte=timezone.now(),
+            date_depart__gt=now,  # Utilisation de __gt pour exclure les départs en cours
             places_disponibles__gt=0
-        ).select_related('trajet__depart__ville', 'trajet__arrivee__ville')
+        ).select_related(
+            'trajet__depart__ville',
+            'trajet__arrivee__ville'
+        )
         
         # Get search parameters from GET request
         departure_id = self.request.GET.get('departure')
@@ -41,7 +46,16 @@ class SearchView(ListView):
         if arrival_id:
             queryset = queryset.filter(trajet__arrivee_id=arrival_id)
         if date:
-            queryset = queryset.filter(date_depart__date=date)
+            # S'assurer que la date est valide avant de filtrer
+            try:
+                date_obj = timezone.datetime.strptime(date, '%Y-%m-%d').date()
+                queryset = queryset.filter(
+                    date_depart__date=date_obj,
+                    date_depart__gt=now  # S'assurer que c'est dans le futur
+                )
+            except (ValueError, TypeError):
+                # En cas d'erreur de format de date, on ignore le filtre
+                pass
             
         return queryset.order_by('date_depart')
     
@@ -90,10 +104,15 @@ class HomeView(ListView):
     paginate_by = 10
 
     def get_queryset(self):
+        # Filtrer uniquement les horaires futurs avec des places disponibles
+        now = timezone.now()
         queryset = Horaire.objects.filter(
-            date_depart__gte=timezone.now(),
+            date_depart__gt=now,  # Utilisation de __gt pour exclure les départs en cours
             places_disponibles__gt=0
-        ).select_related('trajet__depart__ville', 'trajet__arrivee__ville')
+        ).select_related(
+            'trajet__depart__ville', 
+            'trajet__arrivee__ville'
+        ).order_by('date_depart')
         
         # Filtrage par ville de départ et d'arrivée
         depart = self.request.GET.get('depart')
@@ -105,9 +124,18 @@ class HomeView(ListView):
         if arrivee:
             queryset = queryset.filter(trajet__arrivee__ville__id=arrivee)
         if date:
-            queryset = queryset.filter(date_depart__date=date)
+            # S'assurer que la date est valide avant de filtrer
+            try:
+                date_obj = timezone.datetime.strptime(date, '%Y-%m-%d').date()
+                queryset = queryset.filter(
+                    date_depart__date=date_obj,
+                    date_depart__gt=now  # S'assurer que c'est dans le futur
+                )
+            except (ValueError, TypeError):
+                # En cas d'erreur de format de date, on ignore le filtre
+                pass
             
-        return queryset.order_by('date_depart')
+        return queryset
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -136,11 +164,30 @@ class ReservationCreateView(LoginRequiredMixin, CreateView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['horaire'] = get_object_or_404(Horaire, pk=self.kwargs['pk'])
+        horaire = get_object_or_404(Horaire, pk=self.kwargs['pk'])
+        context['horaire'] = horaire
+        
+        # Vérifier le statut de fidélité
+        est_gratuite = False
+        afficher_rappel = False
+        nb_reservations = 0
+        
+        if self.request.user.is_authenticated and hasattr(self.request.user, 'client'):
+            est_gratuite, nb_reservations = self.request.user.client.prochaine_reservation_gratuite()
+            # Afficher un rappel si la prochaine réservation est la 6ème (donc 5 réservations effectuées)
+            afficher_rappel = (nb_reservations + 1) % 6 == 0 and not est_gratuite
+        
+        context.update({
+            'reservation_gratuite': est_gratuite,
+            'afficher_rappel_fidelite': afficher_rappel,
+            'nb_reservations': nb_reservations
+        })
+        
         if 'client_form' not in context:
             context['client_form'] = self.client_form_class(user=self.request.user)
         if 'form' not in context:
             context['form'] = self.form_class()
+            
         return context
     
     def get_success_url(self):
@@ -240,8 +287,18 @@ class ReservationCreateView(LoginRequiredMixin, CreateView):
                 messages.error(self.request, "Désolé, il n'y a pas assez de places disponibles pour ce trajet.")
                 return self.form_invalid(form, client_form)
             
+            # Vérifier si la réservation est gratuite (6ème réservation)
+            est_gratuite, nb_reservations = client.prochaine_reservation_gratuite()
+            
             # Calcul du montant total
-            montant_total = float(horaire.prix_base) * nombre_billets
+            if est_gratuite:
+                montant_total = 0  # La réservation est gratuite
+                messages.success(
+                    self.request,
+                    "Félicitations ! Votre 6ème réservation est offerte en tant que cadeau de fidélité !"
+                )
+            else:
+                montant_total = float(horaire.prix_base) * nombre_billets
             
             # Création de la réservation
             reservation = Reservation.objects.create(
@@ -265,6 +322,11 @@ class ReservationCreateView(LoginRequiredMixin, CreateView):
             # Mise à jour des places disponibles
             horaire.places_disponibles -= nombre_billets
             horaire.save()
+            
+            # Incrémenter les points de fidélité (1 point par billet)
+            if not est_gratuite:  # On ne donne pas de points pour les réservations gratuites
+                client.points_fidelite += nombre_billets
+                client.save()
             
             # Stocker la réservation créée pour l'utiliser dans send_confirmation_email
             self.object = reservation
@@ -293,9 +355,21 @@ class ReservationCreateView(LoginRequiredMixin, CreateView):
             return self.form_invalid(form, client_form)
     
     def form_invalid(self, form, client_form=None):
-        return self.render_to_response(
-            self.get_context_data(form=form, client_form=client_form or self.client_form_class())
-        )
+        # Get the error messages
+        error_messages = []
+        for field, errors in form.errors.items():
+            for error in errors:
+                error_messages.append(f"{form.fields[field].label}: {error}")
+        
+        # If we have error messages, store them in the session
+        if error_messages:
+            messages.error(self.request, ". ".join(error_messages))
+        
+        # Get the horaire ID from the URL
+        horaire_id = self.kwargs.get('pk')
+        
+        # Redirect back to the reservation form with the error message
+        return redirect('reservations:reservation-create', pk=horaire_id)
     
     def send_confirmation_email(self):
         reservation = self.object
@@ -892,10 +966,68 @@ class TrajetDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     def test_func(self):
         return self.request.user.is_staff
     
-    def delete(self, request, *args, **kwargs):
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
         trajet = self.get_object()
-        messages.success(request, f'Le trajet {trajet} a été supprimé avec succès.')
-        return super().delete(request, *args, **kwargs)
+        
+        # Récupérer les réservations associées
+        reservations = []
+        horaires_count = 0
+        
+        for horaire in trajet.horaires.all():
+            horaires_count += 1
+            for reservation in horaire.reservations.all():
+                reservations.append(reservation)
+        
+        context['reservations'] = reservations
+        context['has_reservations'] = len(reservations) > 0
+        context['horaires_count'] = horaires_count
+        return context
+    
+    def post(self, request, *args, **kwargs):
+        trajet = self.get_object()
+        
+        # Vérifier si l'utilisateur a confirmé la suppression des réservations
+        confirm_delete = request.POST.get('confirm_delete', 'no') == 'yes'
+        
+        # Vérifier s'il y a des réservations associées
+        has_reservations = False
+        reservations_to_delete = []
+        
+        for horaire in trajet.horaires.all():
+            for reservation in horaire.reservations.all():
+                has_reservations = True
+                reservations_to_delete.append(reservation)
+        
+        if has_reservations and not confirm_delete:
+            # Afficher la page de confirmation pour la suppression des réservations
+            return self.render_to_response(self.get_context_data(show_confirmation=True))
+        
+        try:
+            # Supprimer d'abord les réservations associées (si confirmé)
+            if confirm_delete and reservations_to_delete:
+                for reservation in reservations_to_delete:
+                    reservation.delete()
+            
+            # Supprimer les horaires associés
+            horaires_count = trajet.horaires.count()
+            trajet.horaires.all().delete()
+            
+            # Enfin, supprimer le trajet
+            trajet.delete()
+            
+            messages.success(
+                request,
+                f'Le trajet {trajet} et ses {horaires_count} horaires associés ont été supprimés avec succès.'
+            )
+            return redirect(self.get_success_url())
+            
+        except Exception as e:
+            messages.error(
+                request,
+                f'Une erreur est survenue lors de la suppression : {str(e)}'
+            )
+            return redirect('reservations:trajet-list')
 
 def ajouter_ville(request):
     """

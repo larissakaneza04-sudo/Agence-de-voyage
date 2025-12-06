@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+    'django.contrib.humanize',
     
     # Third-party apps
     'crispy_forms',
@@ -175,23 +176,51 @@ STRIPE_SECRET_KEY = 'votre_cle_secrete_stripe'
 STRIPE_WEBHOOK_SECRET = 'votre_webhook_secret_stripe'
 
 # Email Configuration
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
+EMAIL_TIMEOUT = 30  # Timeout en secondes
+EMAIL_SSL_KEYFILE = None
+EMAIL_SSL_CERTFILE = None
+
+# Configuration pour Gmail (à remplacer par vos identifiants)
+EMAIL_HOST_USER = 'votre_email@gmail.com'  # Votre adresse Gmail
+EMAIL_HOST_PASSWORD = 'votre_mot_de_passe_application'  # Mot de passe d'application Gmail
+
+# En mode DEBUG, on affiche les emails dans la console
 if DEBUG:
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Affiche les emails dans la console en développement
-else:
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST = 'smtp.gmail.com'  # Remplacez par votre serveur SMTP
-    EMAIL_PORT = 587
-    EMAIL_USE_TLS = True
-    EMAIL_HOST_USER = 'larissakaneza04@gmail.com'  # Remplacez par votre email
-    EMAIL_HOST_PASSWORD = 'Kaneza24?!'  # Remplacez par votre mot de passe
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Configuration des emails
-DEFAULT_FROM_EMAIL = 'larissakaneza04@gmail.com'  # Email d'expéditeur par défaut
-SERVER_EMAIL = 'larissakaneza04@gmail.com'  # Email pour les erreurs
+DEFAULT_FROM_EMAIL = 'votre_email@gmail.com'  # Doit correspondre à EMAIL_HOST_USER
+DEFAULT_TO_EMAIL = 'votre_email@gmail.com'  # Email par défaut pour les envois
+SERVER_EMAIL = 'votre_email@gmail.com'  # Email pour les erreurs
+
+# Configuration pour les erreurs d'email
+ADMINS = [
+    ('Admin', 'votre_email@gmail.com'),
+]
+MANAGERS = ADMINS
 
 # Configuration du site
 SITE_URL = 'http://127.0.0.1:8000'  # URL de base du site
 CONTACT_PHONE = '+33 1 23 45 67 89'  # Numéro de contact de l'agence
+
+# Configuration des messages
+MESSAGE_TAGS = {
+    10: 'debug',
+    20: 'info',
+    25: 'success',
+    30: 'warning',
+    40: 'danger',
+}
+
+# Configuration des sessions
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # La session expire quand le navigateur est fermé
+SESSION_COOKIE_AGE = 1800  # Durée de la session en secondes (30 minutes)
+SESSION_SAVE_EVERY_REQUEST = True  # Rafraîchir la session à chaque requête
 
 # Login/Logout URLs
 LOGIN_REDIRECT_URL = 'reservations:home'  # Utilisation du namespace 'reservations'

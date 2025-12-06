@@ -12,6 +12,20 @@
                     <h3 class="mb-0">Nouvelle Réservation</h3>
                 </div>
                 <div class="card-body">
+                    {% if reservation_gratuite %}
+                    <div class="alert alert-success mb-4">
+                        <h4 class="alert-heading">🎉 Félicitations !</h4>
+                        <p class="mb-0">Votre prochaine réservation est <strong>offerte</strong> en tant que cadeau de fidélité pour votre 6ème voyage avec nous !</p>
+                    </div>
+                    {% elif afficher_rappel_fidelite %}
+                    <div class="alert alert-info mb-4">
+                        <h4 class="alert-heading">🌟 Vous y êtes presque !</h4>
+                        <p class="mb-0">
+                            C'est votre <strong>{{ nb_reservations|add:1 }}ème réservation</strong>. 
+                            La prochaine (la 6ème) sera <strong>gratuite</strong> en tant que cadeau de fidélité !
+                        </p>
+                    </div>
+                    {% endif %}
                     <form method="post" id="reservationForm">
                         {% csrf_token %}
                         

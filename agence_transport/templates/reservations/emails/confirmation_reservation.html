@@ -1,13 +1,15 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr">
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Confirmation de votre réservation {{ reservation.reference }}</title>
     <style type="text/css">
         /* Client-specific resets */
         body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        /* Propriétés spécifiques à Outlook, ignorées par les autres clients */
+        table, td { mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; }
         img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
         
         /* Reset styles */
@@ -125,7 +127,7 @@
                     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #ffffff; border: 1px solid #dddddd; border-top: none; border-radius: 0 0 5px 5px;">
                         <tr>
                             <td style="padding: 30px;">
-                                <p style="margin: 0 0 15px 0;">Bonjour {{ reservation.client.user.get_full_name|default:reservation.client.user.username }},</p>
+                                <p style="margin: 0 0 15px 0;">Bonjour {{ user.first_name }} {{ user.last_name }},</p>
                                 
                                 <p style="margin: 0 0 15px 0;">Nous vous remercions pour votre réservation. Voici un récapitulatif de votre commande :</p>
                                 
@@ -134,11 +136,11 @@
                                     <tr>
                                         <td>
                                             <h3 style="margin: 0 0 15px 0; color: #007bff;">Détails du voyage</h3>
-                                            <p style="margin: 0 0 10px 0;"><strong>Trajet :</strong> {{ trajet }}</p>
-                                            <p style="margin: 0 0 10px 0;"><strong>Date de départ :</strong> {{ date_depart|date:"d/m/Y H:i" }}</p>
-                                            <p style="margin: 0 0 10px 0;"><strong>Date d'arrivée :</strong> {{ date_arrivee|date:"d/m/Y H:i" }}</p>
+                                            <p style="margin: 0 0 10px 0;"><strong>Départ :</strong> {{ reservation.horaire.trajet.depart.ville.nom }} &rarr; {{ reservation.horaire.trajet.depart.nom }}</p>
+                                            <p style="margin: 0 0 10px 0;"><strong>Date de départ :</strong> {{ reservation.horaire.date_depart|date:"d/m/Y H:i" }}</p>
+                                            <p style="margin: 0 0 10px 0;"><strong>Date d'arrivée :</strong> {{ reservation.horaire.date_arrivee|date:"d/m/Y H:i" }}</p>
                                             <p style="margin: 0 0 10px 0;"><strong>Nombre de passagers :</strong> {{ reservation.billets.count }}</p>
-                                            <p style="margin: 0;"><strong>Montant total :</strong> {{ montant_total }} Fbu</p>
+                                            <p style="margin: 0;"><strong>Montant total :</strong> {{ reservation.montant_total|floatformat:0 }} Fbu</p>
                                         </td>
                                     </tr>
                                 </table>
@@ -149,7 +151,7 @@
                                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto 20px auto;">
                                     <tr>
                                         <td align="center" bgcolor="#28a745" style="border-radius: 5px;">
-                                            <a href="{{ site_url }}{% url 'reservations:reservation-detail' reservation.pk %}" target="_blank" style="background-color: #28a745; border: 1px solid #28a745; border-radius: 5px; color: #ffffff; display: inline-block; font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; line-height: 40px; text-align: center; text-decoration: none; padding: 0 25px;">Voir ma réservation</a>
+                                            <a href="{{ site_url }}{% url 'reservations:reservation-detail' pk=reservation.pk %}" target="_blank" style="background-color: #28a745; border: 1px solid #28a745; border-radius: 5px; color: #ffffff; display: inline-block; font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; line-height: 40px; text-align: center; text-decoration: none; padding: 0 25px;">Voir ma réservation</a>
                                         </td>
                                     </tr>
                                 </table>
@@ -157,13 +159,13 @@
                                 <p style="margin: 0 0 15px 0;">Pour toute question concernant votre réservation, n'hésitez pas à nous contacter :</p>
                                 
                                 <ul style="margin: 0 0 20px 0; padding-left: 20px;">
-                                    <li style="margin-bottom: 5px;">Par email : <a href="mailto:{{ contact_email }}" style="color: #007bff; text-decoration: none;">{{ contact_email }}</a></li>
+                                    <li style="margin-bottom: 5px;">Par email : <a href="mailto:{{ DEFAULT_FROM_EMAIL }}" style="color: #007bff; text-decoration: none;">{{ DEFAULT_FROM_EMAIL }}</a></li>
                                     <li>Par téléphone : {{ contact_phone }}</li>
                                 </ul>
                                 
                                 <p style="margin: 0 0 20px 0;">Nous vous remercions de votre confiance et vous souhaitons un excellent voyage !</p>
                                 
-                                <p style="margin: 0;">Cordialement,<br>L'équipe de l'Agence de Voyage</p>
+                                <p style="margin: 0;">Cordialement,<br>L&apos;équipe Larissa Inspiration spirit travel</p>
                             </td>
                         </tr>
                     </table>
@@ -173,7 +175,7 @@
                         <tr>
                             <td style="text-align: center; color: #6c757d; font-size: 12px; padding: 10px 0;">
                                 <p style="margin: 0 0 5px 0;">Cet email a été envoyé automatiquement, merci de ne pas y répondre.</p>
-                                <p style="margin: 0;">{{ annee_courante }} Agence de Voyage. Tous droits réservés.</p>
+                                <p style="margin: 0;">{{ current_year }} Larissa Inspiration spirit travel. Tous droits r&eacute;serv&eacute;s.</p>
                             </td>
                         </tr>
                     </table>

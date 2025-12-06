@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator
-from django.forms.widgets import NumberInput
+from django.forms.widgets import NumberInput, DateInput
 from .models import Billet, Client, Paiement, Reservation, Ville, Gare, Trajet, Horaire, Remboursement, TicketBonus
 from datetime import datetime, timedelta
 
@@ -470,3 +470,41 @@ class ContactForm(forms.Form):
             'class': 'form-check-input'
         })
     )
+
+
+class FiltreRapportForm(forms.Form):
+    """Formulaire pour filtrer les rapports de vente par période"""
+    date_debut = forms.DateField(
+        label='Date de début',
+        widget=DateInput(attrs={
+            'type': 'date',
+            'class': 'form-control',
+            'max': timezone.now().strftime('%Y-%m-%d')
+        }),
+        required=False
+    )
+    
+    date_fin = forms.DateField(
+        label='Date de fin',
+        widget=DateInput(attrs={
+            'type': 'date',
+            'class': 'form-control',
+            'max': timezone.now().strftime('%Y-%m-%d')
+        }),
+        required=False
+    )
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        date_debut = cleaned_data.get('date_debut')
+        date_fin = cleaned_data.get('date_fin')
+        
+        # Si une seule des deux dates est renseignée
+        if bool(date_debut) ^ bool(date_fin):
+            raise forms.ValidationError("Veuillez spécifier à la fois une date de début et une date de fin.")
+        
+        # Vérifier que la date de début est avant la date de fin
+        if date_debut and date_fin and date_debut > date_fin:
+            raise forms.ValidationError("La date de début doit être antérieure à la date de fin.")
+            
+        return cleaned_data

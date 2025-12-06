@@ -56,6 +56,21 @@ class Client(models.Model):
     
     def __str__(self):
         return f"{self.user.get_full_name() or self.user.username}"
+        
+    def prochaine_reservation_gratuite(self):
+        """
+        Vérifie si la prochaine réservation est éligible à un bonus (toutes les 6 réservations)
+        Retourne un tuple (est_gratuite, nb_reservations_effectuees)
+        """
+        # Compter le nombre de réservations confirmées ou utilisées
+        nb_reservations = self.reservations.filter(
+            statut__in=[Reservation.StatutReservation.CONFIRMEE, 
+                       Reservation.StatutReservation.UTILISEE]
+        ).count()
+        
+        # La 6ème, 12ème, 18ème, etc. réservation est gratuite
+        est_gratuite = (nb_reservations + 1) % 6 == 0
+        return est_gratuite, nb_reservations
 
 class Reservation(models.Model):
     class StatutReservation(models.TextChoices):
@@ -80,6 +95,61 @@ class Reservation(models.Model):
         
     def __str__(self):
         return f"Réservation {self.reference} - {self.client}"
+        
+    def get_display_status(self):
+        """
+        Retourne le statut à afficher en fonction de la date de départ et du statut actuel
+        """
+        now = timezone.now()
+        
+        # Si la réservation est annulée, remboursée ou échouée, on affiche ce statut
+        if self.statut in [self.StatutReservation.ANNULEE, 
+                          self.StatutReservation.REMBOURSEE]:
+            return self.get_statut_display()
+        elif self.statut == 'FAIL':
+            return 'Échoué'
+            
+        # Pour les réservations confirmées ou utilisées, on vérifie la date
+        if self.horaire.date_depart > now:
+            # Date de départ dans le futur
+            return 'À venir'
+        else:
+            # Date de départ dans le passé
+            if self.statut == self.StatutReservation.UTILISEE:
+                return 'Effectué'
+            else:
+                return 'Passé'
+    
+    def get_status_badge_class(self):
+        """
+        Retourne la classe CSS à utiliser pour le badge de statut
+        """
+        now = timezone.now()
+        
+        # Si la réservation est annulée, remboursée ou échouée
+        if self.statut == self.StatutReservation.ANNULEE:
+            return 'secondary'  # Gris pour les réservations annulées
+        elif self.statut == self.StatutReservation.REMBOURSEE:
+            return 'info'  # Bleu clair pour les remboursements
+        elif self.statut == 'FAIL':  # Si jamais ce statut est utilisé
+            return 'danger'  # Rouge pour les échecs
+            
+        # Pour les réservations confirmées ou utilisées, on vérifie la date
+        if self.horaire.date_depart > now:
+            # Date de départ dans le futur
+            if self.statut == self.StatutReservation.CONFIRMEE:
+                return 'primary'  # Bleu pour les réservations à venir
+            elif self.statut == self.StatutReservation.UTILISEE:
+                return 'primary'  # Bleu pour les réservations marquées comme utilisées (cas inhabituel pour une date future)
+        else:
+            # Date de départ dans le passé
+            if self.statut == self.StatutReservation.UTILISEE:
+                return 'success'  # Vert pour les trajets effectués
+            else:
+                return 'warning'  # Jaune/Orange pour les trajets passés non marqués comme utilisés
+                
+        # Par défaut, on retourne une classe secondaire
+        return 'secondary'
 
 class Billet(models.Model):
     class TypeBillet(models.TextChoices):

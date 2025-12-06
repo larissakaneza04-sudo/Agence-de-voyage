@@ -1,5 +1,6 @@
 {% extends 'base/base.html' %}
 {% load static %}
+{% load currency_filters %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/home.css' %}">
@@ -212,7 +213,7 @@
 </section>
 
 <!-- Prochains départs -->
-<section class="py-5">
+<section class="py-5" style="background-color: #f8f9fa;">
     <div class="container">
         <h2 class="text-center mb-5" style="font-weight: 700; color: #2c3e50;">Prochains départs</h2>
         
@@ -228,15 +229,31 @@
                                     {{ horaire.trajet.arrivee.ville.nom }}
                                 </h5>
                                 <h6 class="card-subtitle mb-2 text-muted">
-                                    {{ horaire.date_depart|date:"d F Y" }} à {{ horaire.heure_depart|time:"H:i" }}
+                                    <i class="far fa-calendar-alt me-1"></i> {{ horaire.date_depart|date:"d F Y" }}
+                                    <br>
+                                    <i class="far fa-clock me-1"></i> {{ horaire.date_depart|time:"H:i" }}
                                 </h6>
-                                <p class="card-text">
-                                    <i class="fas fa-bus me-2"></i> {{ horaire.bus.modele }} ({{ horaire.bus.places }} places)<br>
-                                    <i class="fas fa-euro-sign me-2"></i> {{ horaire.prix }} Fbu
-                                </p>
+                                <div class="card-text mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <i class="fas fa-map-marker-alt text-primary me-2"></i>
+                                            <span class="text-muted">Départ:</span> {{ horaire.trajet.depart.nom }}
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between mt-2">
+                                        <div>
+                                            <i class="fas fa-map-marker-alt text-success me-2"></i>
+                                            <span class="text-muted">Arrivée:</span> {{ horaire.trajet.arrivee.nom }}
+                                        </div>
+                                    </div>
+                                    <div class="mt-2">
+                                        <i class="fas fa-money-bill-wave text-info me-2"></i>
+                                        <span class="text-muted">Prix:</span> {{ horaire.prix_base|currency }}
+                                    </div>
+                                </div>
                                 <div class="d-flex justify-content-between align-items-center">
                                     <span class="badge bg-{% if horaire.places_disponibles > 10 %}success{% elif horaire.places_disponibles > 0 %}warning{% else %}danger{% endif %}">
-                                        {{ horaire.places_disponibles }} place{{ horaire.places_disponibles|pluralize }} disponible{{ horaire.places_disponibles|pluralize }}
+                                        <i class="fas fa-users me-1"></i> {{ horaire.places_disponibles }} place{{ horaire.places_disponibles|pluralize }} disponible{{ horaire.places_disponibles|pluralize }}
                                     </span>
                                     <a href="{% url 'reservations:reservation-create' pk=horaire.id %}" class="btn btn-sm btn-primary">
                                         Réserver <i class="fas fa-arrow-right ms-1"></i>
@@ -247,9 +264,14 @@
                     </div>
                 {% endfor %}
             </div>
+            <div class="text-center mt-4">
+                <a href="{% url 'reservations:search' %}" class="btn btn-outline-primary">
+                    Voir tous les départs <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+            </div>
         {% else %}
             <div class="alert alert-info text-center" role="alert">
-                Aucun départ prévu pour le moment. Veuillez réessayer ultérieurement.
+                <i class="fas fa-info-circle me-2"></i> Aucun départ prévu pour le moment. Veuillez réessayer ultérieurement.
             </div>
         {% endif %}
     </div>

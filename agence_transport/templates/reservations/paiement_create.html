@@ -1,4 +1,5 @@
 {% extends 'base/base.html' %}
+{% load static %}
 
 {% block title %}Paiement de la réservation{% endblock %}
 
@@ -49,11 +50,15 @@
                                         <h6 class="card-title">Détails du voyage</h6>
                                         <div class="d-flex justify-content-between mb-2">
                                             <span>Durée :</span>
-                                            <strong>{{ reservation.horaire.duree|time:"H\hi" }}</strong>
+                                            <span id="duree-voyage" 
+                                                  data-depart="{{ reservation.horaire.date_depart|date:'c' }}"
+                                                  data-arrivee="{{ reservation.horaire.date_arrivee|date:'c' }}">
+                                                <strong>Calcul en cours...</strong>
+                                            </span>
                                         </div>
                                         <div class="d-flex justify-content-between mb-2">
                                             <span>Distance :</span>
-                                            <strong>{{ reservation.horaire.trajet.distance }} km</strong>
+                                            <span><strong>{{ reservation.horaire.trajet.distance|default:200 }} km</strong></span>
                                         </div>
                                         <div class="d-flex justify-content-between mb-2">
                                             <span>Classe :</span>
@@ -91,9 +96,77 @@
                         </div>
                     </div>
 
-                    <h5 class="mb-4">Informations de paiement</h5>
+                    <h5 class="mb-4">Méthode de paiement</h5>
                     
-                    <form method="post" id="payment-form">
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="payment-methods">
+                                <div class="form-check payment-option">
+                                    <input class="form-check-input" type="radio" name="mode_paiement" id="ecocash" value="ecocash" checked>
+                                    <label class="form-check-label w-100" for="ecocash">
+                                        <div class="card h-100">
+                                            <div class="card-body d-flex align-items-center">
+                                                <div class="me-3" style="width: 48px; height: 48px;">
+                                                    <img src="{% static 'css/EcoCash.png' %}" alt="Ecocash" class="img-fluid" style="max-height: 100%; max-width: 100%;">
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0">Ecocash</h6>
+                                                    <small class="text-muted">Paiement mobile via Ecocash</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                <div class="form-check payment-option">
+                                    <input class="form-check-input" type="radio" name="mode_paiement" id="lumicash" value="lumicash">
+                                    <label class="form-check-label w-100" for="lumicash">
+                                        <div class="card h-100">
+                                            <div class="card-body d-flex align-items-center">
+                                                <div class="me-3" style="width: 48px; height: 48px;">
+                                                    <img src="{% static 'css/lumicash.png' %}" alt="Lumicash" class="img-fluid" style="max-height: 100%; max-width: 100%;">
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0">Lumicash</h6>
+                                                    <small class="text-muted">Paiement mobile via Lumicash</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                <div class="form-check payment-option">
+                                    <input class="form-check-input" type="radio" name="mode_paiement" id="ihela" value="ihela">
+                                    <label class="form-check-label w-100" for="ihela">
+                                        <div class="card h-100">
+                                            <div class="card-body d-flex align-items-center">
+                                                <div class="me-3" style="width: 48px; height: 48px;">
+                                                    <img src="{% static 'css/ihela-ryanje.png' %}" alt="Ihela Money" class="img-fluid" style="max-height: 100%; max-width: 100%;">
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0">Ihela Money</h6>
+                                                    <small class="text-muted">Paiement via Ihela Money</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="mobile-payment-details" class="mt-4">
+                        <h6>Entrez votre numéro de téléphone</h6>
+                        <div class="input-group mb-3">
+                            <span class="input-group-text">+257</span>
+                            <input type="tel" class="form-control" name="telephone" placeholder="Votre numéro de téléphone" required>
+                        </div>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>Vous recevrez une demande de paiement sur votre téléphone mobile.
+                        </div>
+                    </div>
+
+                    <form method="post" id="payment-form" class="mt-4">
                         {% csrf_token %}
                         
                         {% if form.non_field_errors %}
@@ -103,6 +176,15 @@
                                 {% endfor %}
                             </div>
                         {% endif %}
+                        
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-credit-card me-2"></i>Payer {{ reservation.montant_total|floatformat:0 }} FBU
+                            </button>
+                            <a href="{% url 'reservations:reservation-detail' pk=reservation.pk %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Retour à la réservation
+                            </a>
+                        </div>
 
                         <div class="mb-3">
                             <label for="{{ form.methode.id_for_label }}" class="form-label">Méthode de paiement</label>
@@ -173,7 +255,41 @@
 
 {% block extra_js %}
 <script>
-    // Masquer les champs de carte par défaut
+// Fonction pour formater la durée en heures et minutes
+function formatDuration(minutes) {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    
+    if (hours > 0 && mins > 0) {
+        return `${hours}h ${mins.toString().padStart(2, '0')}min`;
+    } else if (hours > 0) {
+        return `${hours}h`;
+    } else {
+        return `${mins}min`;
+    }
+}
+
+// Calcul de la durée du trajet
+document.addEventListener('DOMContentLoaded', function() {
+    // Calcul de la durée du trajet
+    const dureeElement = document.getElementById('duree-voyage');
+    if (dureeElement) {
+        const depart = new Date(dureeElement.dataset.depart);
+        const arrivee = new Date(dureeElement.dataset.arrivee);
+        
+        // Calcul de la différence en minutes
+        const diffInMs = arrivee - depart;
+        const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+        
+        // Mise à jour de l'affichage
+        if (diffInMinutes > 0) {
+            dureeElement.innerHTML = `<strong>${formatDuration(diffInMinutes)}</strong>`;
+        } else {
+            dureeElement.innerHTML = '<strong>3h 30min</strong>'; // Valeur par défaut
+        }
+    }
+    
+    // Gestion des champs de carte de crédit
     const cardFields = document.querySelectorAll('.card-field');
     const methodSelect = document.getElementById('{{ form.methode.id_for_label }}');
     
@@ -184,19 +300,20 @@
         });
     }
     
-    // Initialiser l'état des champs
+    // Initialisation
     toggleCardFields();
+    if (methodSelect) {
+        methodSelect.addEventListener('change', toggleCardFields);
+    }
     
-    // Écouter les changements de la méthode de paiement
-    methodSelect.addEventListener('change', toggleCardFields);
-    
+    // Initialiser l'état des champs
     // Formatage du numéro de carte
     const cardNumber = document.getElementById('{{ form.numero_carte.id_for_label }}');
     if (cardNumber) {
         cardNumber.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\s+/g, '');
-            value = value.replace(/(\d{4})/g, '$1 ').trim();
-            e.target.value = value;
+            let value = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+            let formatted = value.replace(/(\d{4})(?=\d)/g, "$1 ").trim();
+            e.target.value = formatted;
         });
     }
     
@@ -220,5 +337,6 @@
             e.target.value = e.target.value.replace(/\D/g, '').substring(0, 4);
         });
     }
+}); // Fin de l'écouteur DOMContentLoaded
 </script>
 {% endblock %}

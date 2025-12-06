@@ -14,6 +14,19 @@
                 <div class="card-body">
                     <h5>Êtes-vous sûr de vouloir supprimer ce trajet ?</h5>
                     
+                    {% if has_reservations and not show_confirmation %}
+                    <div class="alert alert-danger">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                            </div>
+                            <div>
+                                <strong>Attention critique :</strong> Ce trajet est associé à {{ reservations|length }} réservation(s).
+                                La suppression de ce trajet nécessite également la suppression de ces réservations.
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
                     <div class="alert alert-warning">
                         <div class="d-flex">
                             <div class="flex-shrink-0">
@@ -21,9 +34,13 @@
                             </div>
                             <div>
                                 <strong>Attention :</strong> Cette action est irréversible. Tous les horaires associés à ce trajet seront également supprimés.
+                                {% if horaires_count > 0 %}
+                                <br><strong>{{ horaires_count }} horaire(s)</strong> seront supprimés.
+                                {% endif %}
                             </div>
                         </div>
                     </div>
+                    {% endif %}
 
                     <div class="card mb-4">
                         <div class="card-body">
@@ -61,15 +78,51 @@
                         </div>
                     </div>
 
+                    {% if has_reservations and not show_confirmation %}
+                    <!-- Afficher les réservations associées -->
+                    <div class="card mb-4 border-danger">
+                        <div class="card-header bg-light text-danger">
+                            <h5 class="mb-0"><i class="fas fa-ticket-alt me-2"></i>Réservations associées ({{ reservations|length }})</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="list-group list-group-flush">
+                                {% for reservation in reservations %}
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">Réservation #{{ reservation.reference }}</h6>
+                                        <span class="badge bg-{{ reservation.get_statut_display|lower }}">
+                                            {{ reservation.get_statut_display }}
+                                        </span>
+                                    </div>
+                                    <p class="mb-1">
+                                        <i class="fas fa-user me-2"></i>{{ reservation.client.user.get_full_name|default:reservation.client.user.username }}
+                                    </p>
+                                    <small class="text-muted">
+                                        <i class="far fa-calendar-alt me-1"></i> Départ : {{ reservation.horaire.date_depart|date:"d/m/Y H:i" }}
+                                    </small>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
                     <form method="post">
                         {% csrf_token %}
-                        <div class="d-flex justify-content-between">
+                        <div class="mt-4 d-flex justify-content-between">
                             <a href="{% url 'reservations:trajet-list' %}" class="btn btn-secondary">
-                                <i class="fas fa-times me-1"></i> Annuler
+                                <i class="fas fa-arrow-left me-2"></i>Annuler
                             </a>
-                            <button type="submit" class="btn btn-danger">
-                                <i class="fas fa-trash-alt me-1"></i> Confirmer la suppression
-                            </button>
+                            {% if has_reservations and not show_confirmation %}
+                                <input type="hidden" name="confirm_delete" value="yes">
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>Supprimer avec les réservations ({{ reservations|length }})
+                                </button>
+                            {% else %}
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-trash-alt me-2"></i>Confirmer la suppression
+                                </button>
+                            {% endif %}
                         </div>
                     </form>
                 </div>

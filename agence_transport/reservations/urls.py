@@ -3,6 +3,7 @@ from django.views.generic import TemplateView
 from . import views
 from .views import SearchView, ajouter_ville, ajouter_trajet, ajouter_horaire, ajouter_gare
 from .views_paiement import PaiementCreateView
+from .reports import rapports_ventes
 
 app_name = 'reservations'
 
@@ -60,4 +61,7 @@ urlpatterns = [
     path('horaires/ajouter/', ajouter_horaire, name='horaire-ajouter'),
     path('horaires/<int:pk>/modifier/', views.HoraireUpdateView.as_view(), name='horaire-update'),
     path('horaires/<int:pk>/supprimer/', views.HoraireDeleteView.as_view(), name='horaire-delete'),
+    
+    # Rapports
+    path('rapports/ventes/', rapports_ventes, name='rapports-ventes'),
 ]

@@ -1,5 +1,6 @@
 {% extends 'base/base.html' %}
 {% load static %}
+{% load currency_filters %}
 
 {% block title %}Gestion des horaires{% endblock %}
 
@@ -94,7 +95,7 @@
                                 <div class="text-muted">{{ horaire.date_arrivee|date:"H:i" }}</div>
                             </td>
                             <td class="text-center">
-                                {{ horaire.prix_base|floatformat:0 }} FCFA
+                                {{ horaire.prix_base|currency }}
                             </td>
                             <td class="text-center">
                                 {{ horaire.places_disponibles }}

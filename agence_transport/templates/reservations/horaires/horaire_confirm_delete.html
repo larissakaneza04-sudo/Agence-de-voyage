@@ -1,5 +1,6 @@
 {% extends 'base/base.html' %}
 {% load static %}
+{% load currency_filters %}
 
 {% block title %}Supprimer l'horaire{% endblock %}
 
@@ -28,7 +29,7 @@
                                 <li><strong>Trajet :</strong> {{ object.trajet.depart.ville.nom }} → {{ object.trajet.arrivee.ville.nom }}</li>
                                 <li><strong>Départ :</strong> {{ object.date_depart|date:"d/m/Y H:i" }}</li>
                                 <li><strong>Arrivée :</strong> {{ object.date_arrivee|date:"d/m/Y H:i" }}</li>
-                                <li><strong>Prix :</strong> {{ object.prix_base|floatformat:0 }} FCFA</li>
+                                <li><strong>Prix :</strong> {{ object.prix_base|currency }}</li>
                                 <li><strong>Places disponibles :</strong> {{ object.places_disponibles }}</li>
                             </ul>
                         </div>
