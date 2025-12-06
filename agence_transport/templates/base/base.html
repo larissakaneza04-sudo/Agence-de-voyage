@@ -44,22 +44,17 @@
                             <i class="fas fa-cog me-1"></i> Paramètres
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="settingsDropdown" style="min-width: 200px;">
-                            <li><h6 class="dropdown-header">Configuration</h6></li>
-                            <li><a class="dropdown-item" href="/admin/reservations/billet/">
-                                <i class="fas fa-ticket-alt me-2"></i>Billets
-                            </a></li>
-                            <li><a class="dropdown-item" href="/admin/reservations/gare/">
-                                <i class="fas fa-train me-2"></i>Gares
+                            <li><h6 class="dropdown-header">Gestion des horaires et trajets</h6></li>
+                            <li><a class="dropdown-item" href="{% url 'reservations:horaire-list' %}">
+                                <i class="far fa-clock me-2"></i>Gérer les horaires
                             </a></li>
                             <li><a class="dropdown-item" href="{% url 'reservations:trajet-list' %}">
                                 <i class="fas fa-route me-2"></i>Gérer les trajets
                             </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">Gestion des lieux</h6></li>
                             <li><a class="dropdown-item" href="{% url 'reservations:gare-list' %}">
                                 <i class="fas fa-train me-2"></i>Gérer les gares
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{% url 'reservations:horaire-list' %}">
-                                <i class="far fa-clock me-2"></i>Gérer les horaires
                             </a></li>
                             <li><a class="dropdown-item" href="{% url 'reservations:ville-ajouter' %}">
                                 <i class="fas fa-plus-circle me-2"></i>Ajouter une ville

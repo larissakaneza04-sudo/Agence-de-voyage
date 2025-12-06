@@ -1,0 +1,223 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Détails de la gare - {{ gare.nom }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb" class="mt-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'reservations:home' %}">Tableau de bord</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'reservations:gare-list' %}">Gestion des gares</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ gare.nom }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="fas fa-train me-2"></i>{{ gare.nom }}
+                        </h4>
+                        <div>
+                            <a href="{% url 'reservations:gare-update' gare.pk %}" class="btn btn-light btn-sm">
+                                <i class="fas fa-edit me-1"></i> Modifier
+                            </a>
+                            <a href="{% url 'reservations:gare-delete' gare.pk %}" class="btn btn-outline-light btn-sm">
+                                <i class="fas fa-trash-alt me-1"></i> Supprimer
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="card-title">Informations générales</h5>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span><i class="fas fa-city me-2 text-muted"></i> Ville</span>
+                                    <span class="fw-bold">{{ gare.ville.nom }} ({{ gare.ville.code }})</span>
+                                </li>
+                                <li class="list-group-item">
+                                    <div><i class="fas fa-map-marker-alt me-2 text-muted"></i> Adresse</div>
+                                    <div class="ms-4 mt-2">{{ gare.adresse|linebreaks }}</div>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="card-title">Statistiques</h5>
+                            <div class="row text-center">
+                                <div class="col-6 mb-3">
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <h2 class="text-primary">{{ departs.count }}</h2>
+                                            <p class="mb-0 text-muted">Départs</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <h2 class="text-primary">{{ arrivees.count }}</h2>
+                                            <p class="mb-0 text-muted">Arrivées</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trajets au départ de cette gare -->
+            {% if departs %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-arrow-right me-2"></i>Trajets au départ de cette gare
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Destination</th>
+                                    <th>Distance</th>
+                                    <th>Durée</th>
+                                    <th>Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for trajet in departs %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'reservations:trajet-detail' trajet.pk %}">
+                                            {{ trajet.arrivee.ville.nom }} ({{ trajet.arrivee.nom }})
+                                        </a>
+                                    </td>
+                                    <td>{{ trajet.distance }} km</td>
+                                    <td>{{ trajet.duree|time:"H:i" }} h</td>
+                                    <td>
+                                        {% if trajet.actif %}
+                                            <span class="badge bg-success">Actif</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactif</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Trajets à destination de cette gare -->
+            {% if arrivees %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-arrow-left me-2"></i>Trajets à destination de cette gare
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Provenance</th>
+                                    <th>Distance</th>
+                                    <th>Durée</th>
+                                    <th>Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for trajet in arrivees %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'reservations:trajet-detail' trajet.pk %}">
+                                            {{ trajet.depart.ville.nom }} ({{ trajet.depart.nom }})
+                                        </a>
+                                    </td>
+                                    <td>{{ trajet.distance }} km</td>
+                                    <td>{{ trajet.duree|time:"H:i" }} h</td>
+                                    <td>
+                                        {% if trajet.actif %}
+                                            <span class="badge bg-success">Actif</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactif</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Carte de localisation -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-map-marked-alt me-2"></i>Localisation
+                    </h5>
+                </div>
+                <div class="card-body text-center p-0" style="height: 300px;">
+                    <div class="d-flex align-items-center justify-content-center h-100 bg-light">
+                        <div class="text-center">
+                            <i class="fas fa-map-marker-alt fa-3x text-muted mb-3"></i>
+                            <p class="mb-0">Carte de localisation</p>
+                            <small class="text-muted">Intégration de carte à implémenter</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions rapides -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bolt me-2"></i>Actions rapides
+                    </h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'reservations:trajet-create' %}?depart={{ gare.id }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-plus-circle text-success me-2"></i>Créer un trajet au départ de cette gare
+                    </a>
+                    <a href="{% url 'reservations:trajet-create' %}?arrivee={{ gare.id }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-plus-circle text-success me-2"></i>Créer un trajet à destination de cette gare
+                    </a>
+                    <a href="{% url 'reservations:gare-update' gare.pk %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-edit text-primary me-2"></i>Modifier cette gare
+                    </a>
+                    <a href="{% url 'reservations:gare-delete' gare.pk %}" class="list-group-item list-group-item-action text-danger">
+                        <i class="fas fa-trash-alt me-2"></i>Supprimer cette gare
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Script pour gérer les interactions utilisateur
+    document.addEventListener('DOMContentLoaded', function() {
+        // Code pour la carte de localisation pourrait être ajouté ici
+        console.log('Page de détail de la gare chargée');
+    });
+</script>
+{% endblock %}
