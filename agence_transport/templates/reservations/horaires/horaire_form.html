@@ -71,36 +71,126 @@
                             </div>
                         </div>
 
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="{{ form.prix_base.id_for_label }}" class="form-label">
-                                        {{ form.prix_base.label }}
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    <div class="input-group">
-                                        {{ form.prix_base }}
-                                        <span class="input-group-text">FCFA</span>
-                                    </div>
-                                    {% if form.prix_base.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.prix_base.errors.0 }}
-                                        </div>
-                                    {% endif %}
-                                </div>
+                        <!-- Section Prix et places par type de billet -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Configuration des billets</h5>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="{{ form.places_disponibles.id_for_label }}" class="form-label">
-                                        {{ form.places_disponibles.label }}
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    {{ form.places_disponibles }}
-                                    {% if form.places_disponibles.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.places_disponibles.errors.0 }}
+                            <div class="card-body">
+                                <div class="row">
+                                    <!-- Colonne Standard -->
+                                    <div class="col-md-4">
+                                        <div class="card h-100 border-primary">
+                                            <div class="card-header bg-primary text-white">
+                                                <h6 class="mb-0">Standard</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="form-group mb-3">
+                                                    <label for="{{ form.prix_standard.id_for_label }}" class="form-label">
+                                                        {{ form.prix_standard.label }}
+                                                        <span class="text-danger">*</span>
+                                                    </label>
+                                                    <div class="input-group">
+                                                        {{ form.prix_standard }}
+                                                        <span class="input-group-text">BIF</span>
+                                                    </div>
+                                                    {% if form.prix_standard.errors %}
+                                                        <div class="invalid-feedback d-block">
+                                                            {{ form.prix_standard.errors.0 }}
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="{{ form.places_standard.id_for_label }}" class="form-label">
+                                                        {{ form.places_standard.label }}
+                                                        <span class="text-danger">*</span>
+                                                    </label>
+                                                    {{ form.places_standard }}
+                                                    {% if form.places_standard.errors %}
+                                                        <div class="invalid-feedback d-block">
+                                                            {{ form.places_standard.errors.0 }}
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
                                         </div>
-                                    {% endif %}
+                                    </div>
+                                    
+                                    <!-- Colonne Business -->
+                                    <div class="col-md-4">
+                                        <div class="card h-100 border-success">
+                                            <div class="card-header bg-success text-white">
+                                                <h6 class="mb-0">Business</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="form-group mb-3">
+                                                    <label for="{{ form.prix_business.id_for_label }}" class="form-label">
+                                                        {{ form.prix_business.label }}
+                                                        <span class="text-danger">*</span>
+                                                    </label>
+                                                    <div class="input-group">
+                                                        {{ form.prix_business }}
+                                                        <span class="input-group-text">BIF</span>
+                                                    </div>
+                                                    {% if form.prix_business.errors %}
+                                                        <div class="invalid-feedback d-block">
+                                                            {{ form.prix_business.errors.0 }}
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="{{ form.places_business.id_for_label }}" class="form-label">
+                                                        {{ form.places_business.label }}
+                                                        <span class="text-danger">*</span>
+                                                    </label>
+                                                    {{ form.places_business }}
+                                                    {% if form.places_business.errors %}
+                                                        <div class="invalid-feedback d-block">
+                                                            {{ form.places_business.errors.0 }}
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Colonne Première Classe -->
+                                    <div class="col-md-4">
+                                        <div class="card h-100 border-warning">
+                                            <div class="card-header bg-warning text-dark">
+                                                <h6 class="mb-0">Première Classe</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="form-group mb-3">
+                                                    <label for="{{ form.prix_premiere.id_for_label }}" class="form-label">
+                                                        {{ form.prix_premiere.label }}
+                                                        <span class="text-danger">*</span>
+                                                    </label>
+                                                    <div class="input-group">
+                                                        {{ form.prix_premiere }}
+                                                        <span class="input-group-text">BIF</span>
+                                                    </div>
+                                                    {% if form.prix_premiere.errors %}
+                                                        <div class="invalid-feedback d-block">
+                                                            {{ form.prix_premiere.errors.0 }}
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="{{ form.places_premiere.id_for_label }}" class="form-label">
+                                                        {{ form.places_premiere.label }}
+                                                        <span class="text-danger">*</span>
+                                                    </label>
+                                                    {{ form.places_premiere }}
+                                                    {% if form.places_premiere.errors %}
+                                                        <div class="invalid-feedback d-block">
+                                                            {{ form.places_premiere.errors.0 }}
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

@@ -24,11 +24,35 @@ class TrajetAdmin(admin.ModelAdmin):
     ordering = ('depart__ville__nom', 'arrivee__ville__nom')
 
 class HoraireAdmin(admin.ModelAdmin):
-    list_display = ('trajet', 'date_depart', 'date_arrivee', 'prix_base', 'places_disponibles')
+    list_display = ('trajet', 'date_depart', 'date_arrivee', 'get_prix_standard', 'get_places_standard', 'get_prix_business', 'get_places_business', 'get_prix_premiere', 'get_places_premiere')
     list_filter = ('trajet__depart__ville', 'trajet__arrivee__ville', 'date_depart')
     search_fields = ('trajet__depart__nom', 'trajet__arrivee__nom')
     date_hierarchy = 'date_depart'
     ordering = ('-date_depart',)
+    
+    def get_prix_standard(self, obj):
+        return f"{obj.prix_standard} BIF"
+    get_prix_standard.short_description = 'Prix Standard'
+    
+    def get_places_standard(self, obj):
+        return obj.places_standard
+    get_places_standard.short_description = 'Places Standard'
+    
+    def get_prix_business(self, obj):
+        return f"{obj.prix_business} BIF" if obj.prix_business > 0 else "-"
+    get_prix_business.short_description = 'Prix Business'
+    
+    def get_places_business(self, obj):
+        return obj.places_business if obj.places_business > 0 else "-"
+    get_places_business.short_description = 'Places Business'
+    
+    def get_prix_premiere(self, obj):
+        return f"{obj.prix_premiere} BIF" if obj.prix_premiere > 0 else "-"
+    get_prix_premiere.short_description = 'Prix Première'
+    
+    def get_places_premiere(self, obj):
+        return obj.places_premiere if obj.places_premiere > 0 else "-"
+    get_places_premiere.short_description = 'Places Première'
 
 class ClientInline(admin.StackedInline):
     model = Client

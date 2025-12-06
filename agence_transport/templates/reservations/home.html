@@ -247,14 +247,46 @@
                                         </div>
                                     </div>
                                     <div class="mt-2">
-                                        <i class="fas fa-money-bill-wave text-info me-2"></i>
-                                        <span class="text-muted">Prix:</span> {{ horaire.prix_base|currency }}
+                                        <div class="mb-2">
+                                            <i class="fas fa-ticket-alt text-primary me-2"></i>
+                                            <span class="text-muted">Prix à partir de:</span> 
+                                            <span class="fw-bold">{{ horaire.get_prix_min|currency }}</span>
+                                        </div>
+                                        <div class="ms-4">
+                                            {% if horaire.places_standard > 0 %}
+                                            <div class="d-flex justify-content-between">
+                                                <span>Standard:</span>
+                                                <span class="ms-2">{{ horaire.prix_standard|currency }}</span>
+                                                <span class="badge bg-{% if horaire.places_standard > 10 %}success{% else %}warning{% endif %} ms-2">
+                                                    {{ horaire.places_standard }} place{{ horaire.places_standard|pluralize }}
+                                                </span>
+                                            </div>
+                                            {% endif %}
+                                            {% if horaire.places_business > 0 %}
+                                            <div class="d-flex justify-content-between mt-1">
+                                                <span>Business:</span>
+                                                <span class="ms-2">{{ horaire.prix_business|currency }}</span>
+                                                <span class="badge bg-{% if horaire.places_business > 5 %}success{% else %}warning{% endif %} ms-2">
+                                                    {{ horaire.places_business }} place{{ horaire.places_business|pluralize }}
+                                                </span>
+                                            </div>
+                                            {% endif %}
+                                            {% if horaire.places_premiere > 0 %}
+                                            <div class="d-flex justify-content-between mt-1">
+                                                <span>Première classe:</span>
+                                                <span class="ms-2">{{ horaire.prix_premiere|currency }}</span>
+                                                <span class="badge bg-{% if horaire.places_premiere > 3 %}success{% else %}warning{% endif %} ms-2">
+                                                    {{ horaire.places_premiere }} place{{ horaire.places_premiere|pluralize }}
+                                                </span>
+                                            </div>
+                                            {% endif %}
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span class="badge bg-{% if horaire.places_disponibles > 10 %}success{% elif horaire.places_disponibles > 0 %}warning{% else %}danger{% endif %}">
-                                        <i class="fas fa-users me-1"></i> {{ horaire.places_disponibles }} place{{ horaire.places_disponibles|pluralize }} disponible{{ horaire.places_disponibles|pluralize }}
-                                    </span>
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <div class="text-muted small">
+                                        <i class="fas fa-info-circle me-1"></i> Prix en BIF
+                                    </div>
                                     <a href="{% url 'reservations:reservation-create' pk=horaire.id %}" class="btn btn-sm btn-primary">
                                         Réserver <i class="fas fa-arrow-right ms-1"></i>
                                     </a>

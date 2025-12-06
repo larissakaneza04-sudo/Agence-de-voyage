@@ -1,5 +1,6 @@
 {% extends 'base/base.html' %}
 {% load static %}
+{% load currency_filters %}
 
 {% block title %}Recherche de trajets - Agence de Transport{% endblock %}
 
@@ -68,9 +69,38 @@
                                     </div>
                                     <small class="text-muted">Durée</small>
                                 </div>
-                                <div class="col-md-2">
-                                    <div class="h5 text-primary mb-0">{{ horaire.prix_base }} Fbu</div>
-                                    <small class="text-muted">Prix à partir de</small>
+                                <div class="col-md-4">
+                                    <div class="d-flex flex-column">
+                                        {% if horaire.places_standard > 0 %}
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="small">Standard:</span>
+                                            <span class="fw-bold">{{ horaire.prix_standard|currency }}</span>
+                                            <span class="badge bg-{% if horaire.places_standard > 10 %}success{% else %}warning{% endif %} ms-2">
+                                                {{ horaire.places_standard }} place{{ horaire.places_standard|pluralize }}
+                                            </span>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if horaire.places_business > 0 %}
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="small">Business:</span>
+                                            <span class="fw-bold">{{ horaire.prix_business|currency }}</span>
+                                            <span class="badge bg-{% if horaire.places_business > 5 %}success{% else %}warning{% endif %} ms-2">
+                                                {{ horaire.places_business }} place{{ horaire.places_business|pluralize }}
+                                            </span>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if horaire.places_premiere > 0 %}
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="small">Première Classe:</span>
+                                            <span class="fw-bold">{{ horaire.prix_premiere|currency }}</span>
+                                            <span class="badge bg-{% if horaire.places_premiere > 3 %}success{% else %}warning{% endif %} ms-2">
+                                                {{ horaire.places_premiere }} place{{ horaire.places_premiere|pluralize }}
+                                            </span>
+                                        </div>
+                                        {% endif %}
+                                    </div>
                                 </div>
                                 <div class="col-md-2 text-end">
                                     <a href="{% url 'reservations:reservation-create' horaire.id %}" class="btn btn-primary">

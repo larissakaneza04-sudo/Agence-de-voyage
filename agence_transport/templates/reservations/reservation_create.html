@@ -1,5 +1,6 @@
 {% extends 'base/base.html' %}
 {% load static %}
+{% load currency_filters %}
 
 {% block title %}Nouvelle Réservation{% endblock %}
 
@@ -90,11 +91,21 @@
                             <div class="card-body">
                                 <div class="mb-3">
                                     <label for="id_type_billet" class="form-label">Type de billet</label>
-                                    {{ form.type_billet }}
+                                    <select name="type_billet" id="id_type_billet" class="form-select" onchange="updateTypeBillet(this.value)">
+                                        <option value="STD" data-prix="{{ horaire.prix_standard }}">Standard - {{ horaire.prix_standard|currency }}</option>
+                                        {% if horaire.places_business > 0 %}
+                                        <option value="BUS" data-prix="{{ horaire.prix_business }}">Business - {{ horaire.prix_business|currency }}</option>
+                                        {% endif %}
+                                        {% if horaire.places_premiere > 0 %}
+                                        <option value="PRE" data-prix="{{ horaire.prix_premiere }}">Première Classe - {{ horaire.prix_premiere|currency }}</option>
+                                        {% endif %}
+                                    </select>
                                 </div>
                                 <div class="mb-3">
                                     <label for="id_nombre_billets" class="form-label">Nombre de billets</label>
-                                    {{ form.nombre_billets }}
+                                    <input type="number" name="nombre_billets" id="id_nombre_billets" 
+                                           class="form-control" min="1" max="10" value="1" 
+                                           onchange="updatePrixTotal()" oninput="updatePrixTotal()">
                                     <div class="form-text">Maximum 10 billets par réservation</div>
                                 </div>
                                 <div class="mb-3">
@@ -126,8 +137,25 @@
                                                 <td>{{ horaire.date_arrivee|date:"d/m/Y H:i" }}</td>
                                             </tr>
                                             <tr>
+                                                <th>Type de billet</th>
+                                                <td>
+                                                    <select name="type_billet" id="type_billet" class="form-select" onchange="updatePrixTotal()">
+                                                        <option value="STD" data-prix="{{ horaire.prix_standard }}">Standard - {{ horaire.prix_standard|currency }}</option>
+                                                        {% if horaire.places_business > 0 %}
+                                                        <option value="BUS" data-prix="{{ horaire.prix_business }}">Business - {{ horaire.prix_business|currency }}</option>
+                                                        {% endif %}
+                                                        {% if horaire.places_premiere > 0 %}
+                                                        <option value="PRE" data-prix="{{ horaire.prix_premiere }}">Première Classe - {{ horaire.prix_premiere|currency }}</option>
+                                                        {% endif %}
+                                                    </select>
+                                                </td>
+                                            </tr>
+                                            <tr>
                                                 <th>Prix unitaire</th>
-                                                <td id="prix_unitaire">{{ horaire.prix_base }} Fbu</td>
+                                                <td id="prix_unitaire">
+                                                    <span id="prix_unitaire_value">{{ horaire.prix_standard|currency }}</span>
+                                                    <input type="hidden" id="prix_unitaire_input" name="prix_unitaire" value="{{ horaire.prix_standard }}">
+                                                </td>
                                             </tr>
                                             <tr>
                                                 <th>Total</th>
@@ -157,45 +185,89 @@
 
 {% block extra_js %}
 <script>
-    // Calcul automatique du prix total
-    document.addEventListener('DOMContentLoaded', function() {
-        // Récupérer l'ID du champ nombre_billets en JavaScript pur
-        const nombreBilletsId = '{{ form.nombre_billets.id_for_label|escapejs }}';
-        const nombreBillets = document.getElementById(nombreBilletsId);
-        const prixTotal = document.getElementById('prix_total');
-        
-        // Récupérer le prix unitaire depuis l'attribut data
-        const prixUnitaire = parseFloat('{{ horaire.prix_base|default:0|stringformat:"f" }}'.replace(',', '.'));
-        
-        // Vérifier si les éléments existent avant de les utiliser
-        if (nombreBillets && prixTotal) {
-            function updateTotal() {
-                try {
-                    const nb = parseInt(nombreBillets.value) || 0;
-                    if (isNaN(nb) || nb < 0) {
-                        prixTotal.textContent = '0.00 Fbu';
-                        return;
-                    }
-                    const total = (nb * prixUnitaire).toFixed(2);
-                    prixTotal.textContent = total + ' Fbu';
-                } catch (e) {
-                    console.error('Erreur lors du calcul du total :', e);
-                    prixTotal.textContent = '0.00 Fbu';
+    // Fonction pour formater les nombres avec des séparateurs de milliers (accessible globalement)
+    function formatNumber(number) {
+        if (number === undefined || number === null || isNaN(number)) return '0';
+        return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    }
+    
+    // Variables globales
+    let typeBilletSelect, typeBilletRecap;
+    
+    // Fonction pour synchroniser le type de billet sélectionné
+    function updateTypeBillet(value) {
+        // Mettre à jour le sélecteur dans le récapitulatif
+        const recapSelect = document.getElementById('type_billet');
+        if (recapSelect) {
+            // Trouver l'option correspondante dans le récapitulatif
+            for (let i = 0; i < recapSelect.options.length; i++) {
+                if (recapSelect.options[i].value === value) {
+                    recapSelect.selectedIndex = i;
+                    // Mettre à jour directement le prix unitaire
+                    const prixUnitaire = parseFloat(recapSelect.options[i].getAttribute('data-prix'));
+                    document.getElementById('prix_unitaire_value').textContent = formatNumber(prixUnitaire) + ' Fbu';
+                    document.getElementById('prix_unitaire_input').value = prixUnitaire;
+                    break;
                 }
             }
+            // Déclencher la mise à jour des prix
+            updatePrixTotal();
+        }
+    }
+    
+    // Initialisation au chargement de la page
+    document.addEventListener('DOMContentLoaded', function() {
+        typeBilletSelect = document.getElementById('id_type_billet');
+        typeBilletRecap = document.getElementById('type_billet');
+        
+        // Synchroniser la sélection initiale
+        if (typeBilletSelect && typeBilletRecap) {
+            typeBilletRecap.value = typeBilletSelect.value;
+            updatePrixTotal();
+        }
+        const nombreBillets = document.getElementById('id_nombre_billets');
+        const prixTotal = document.getElementById('prix_total');
+        const typeBillet = document.getElementById('type_billet');
+        
+        // Fonction pour mettre à jour le prix total
+        function updatePrixTotal() {
+            try {
+                // Utiliser le premier menu déroulant comme source de vérité
+                const selectedOption = typeBilletSelect.options[typeBilletSelect.selectedIndex];
+                const prixUnitaire = parseFloat(selectedOption.getAttribute('data-prix'));
+                const nbBillets = parseInt(document.getElementById('id_nombre_billets').value) || 0;
+                const total = prixUnitaire * nbBillets;
+                
+                console.log('Prix unitaire:', prixUnitaire, 'Nombre de billets:', nbBillets, 'Total:', total);
+                
+                // Mettre à jour l'affichage du prix unitaire et du total avec formatage
+                document.getElementById('prix_unitaire_value').textContent = formatNumber(prixUnitaire) + ' Fbu';
+                document.getElementById('prix_unitaire_input').value = prixUnitaire;
+                document.getElementById('prix_total').textContent = formatNumber(total) + ' Fbu';
+                
+                // Mettre à jour la sélection dans le récapitulatif si nécessaire
+                if (typeBilletRecap) {
+                    for (let i = 0; i < typeBilletRecap.options.length; i++) {
+                        if (typeBilletRecap.options[i].value === typeBilletSelect.value) {
+                            typeBilletRecap.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('Erreur lors du calcul du total :', e);
+                prixTotal.textContent = '0 BIF';
+            }
+        }
+        
+        // Ajouter les écouteurs d'événements
+        if (nombreBillets && prixTotal && typeBillet) {
+            nombreBillets.addEventListener('change', updatePrixTotal);
+            nombreBillets.addEventListener('input', updatePrixTotal);
+            typeBillet.addEventListener('change', updatePrixTotal);
             
-            // Ajouter les écouteurs d'événements
-            if (nombreBillets) {
-                nombreBillets.addEventListener('change', updateTotal);
-                nombreBillets.addEventListener('input', updateTotal);
-                // Initialiser le total
-                updateTotal();
-            }
-        } else {
-            console.error('Éléments du formulaire non trouvés');
-            if (prixTotal) {
-                prixTotal.textContent = '0.00 Fbu';
-            }
+            // Initialiser le total
+            updatePrixTotal();
         }
     });
 </script>

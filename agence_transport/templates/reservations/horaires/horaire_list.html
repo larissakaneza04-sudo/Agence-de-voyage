@@ -71,8 +71,8 @@
                             <th>Trajet</th>
                             <th class="text-center">Départ</th>
                             <th class="text-center">Arrivée</th>
-                            <th class="text-center">Prix</th>
-                            <th class="text-center">Places</th>
+                            <th class="text-center">Prix (BIF)</th>
+                            <th class="text-center">Places disponibles</th>
                             <th class="text-center">Statut</th>
                             <th class="text-end">Actions</th>
                         </tr>
@@ -95,10 +95,30 @@
                                 <div class="text-muted">{{ horaire.date_arrivee|date:"H:i" }}</div>
                             </td>
                             <td class="text-center">
-                                {{ horaire.prix_base|currency }}
+                                <div class="d-flex flex-column">
+                                    <div class="mb-1">
+                                        <span class="badge bg-primary">Standard: {{ horaire.prix_standard|floatformat:0 }} BIF</span>
+                                    </div>
+                                    <div class="mb-1">
+                                        <span class="badge bg-success">Business: {{ horaire.prix_business|floatformat:0 }} BIF</span>
+                                    </div>
+                                    <div>
+                                        <span class="badge bg-warning text-dark">1ère Classe: {{ horaire.prix_premiere|floatformat:0 }} BIF</span>
+                                    </div>
+                                </div>
                             </td>
                             <td class="text-center">
-                                {{ horaire.places_disponibles }}
+                                <div class="d-flex flex-column">
+                                    <div class="mb-1">
+                                        <span class="badge bg-primary">Standard: {{ horaire.places_standard }}</span>
+                                    </div>
+                                    <div class="mb-1">
+                                        <span class="badge bg-success">Business: {{ horaire.places_business }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="badge bg-warning text-dark">1ère Classe: {{ horaire.places_premiere }}</span>
+                                    </div>
+                                </div>
                             </td>
                             <td class="text-center">
                                 {% if horaire.date_depart > now %}

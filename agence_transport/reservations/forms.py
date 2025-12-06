@@ -92,11 +92,15 @@ class VilleForm(forms.ModelForm):
 
 class HoraireForm(forms.ModelForm):
     """
-    Formulaire pour l'ajout et la modification d'un horaire
+    Formulaire pour l'ajout et la modification d'un horaire avec différents types de billets
     """
     class Meta:
         model = Horaire
-        fields = ['trajet', 'date_depart', 'date_arrivee', 'prix_base', 'places_disponibles']
+        fields = [
+            'trajet', 'date_depart', 'date_arrivee',
+            'prix_standard', 'prix_business', 'prix_premiere',
+            'places_standard', 'places_business', 'places_premiere'
+        ]
         widgets = {
             'trajet': forms.Select(attrs={
                 'class': 'form-select',
@@ -112,15 +116,39 @@ class HoraireForm(forms.ModelForm):
                 'class': 'form-control',
                 'required': True
             }),
-            'prix_base': forms.NumberInput(attrs={
+            # Champs pour les prix
+            'prix_standard': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'min': 0,
-                'step': '0.01',
+                'step': '100',
                 'required': True
             }),
-            'places_disponibles': forms.NumberInput(attrs={
+            'prix_business': forms.NumberInput(attrs={
                 'class': 'form-control',
-                'min': 1,
+                'min': 0,
+                'step': '100',
+                'required': True
+            }),
+            'prix_premiere': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 0,
+                'step': '100',
+                'required': True
+            }),
+            # Champs pour les places disponibles
+            'places_standard': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 0,
+                'required': True
+            }),
+            'places_business': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 0,
+                'required': True
+            }),
+            'places_premiere': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 0,
                 'required': True
             })
         }
@@ -128,8 +156,12 @@ class HoraireForm(forms.ModelForm):
             'trajet': 'Trajet',
             'date_depart': 'Date et heure de départ',
             'date_arrivee': 'Date et heure d\'arrivée',
-            'prix_base': 'Prix de base (FCFA)',
-            'places_disponibles': 'Nombre de places disponibles'
+            'prix_standard': 'Prix Standard (BIF)',
+            'prix_business': 'Prix Business (BIF)',
+            'prix_premiere': 'Prix Première Classe (BIF)',
+            'places_standard': 'Places Standard',
+            'places_business': 'Places Business',
+            'places_premiere': 'Places Première Classe'
         }
 
     def clean(self):

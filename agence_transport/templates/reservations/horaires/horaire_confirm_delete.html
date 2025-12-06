@@ -29,8 +29,13 @@
                                 <li><strong>Trajet :</strong> {{ object.trajet.depart.ville.nom }} → {{ object.trajet.arrivee.ville.nom }}</li>
                                 <li><strong>Départ :</strong> {{ object.date_depart|date:"d/m/Y H:i" }}</li>
                                 <li><strong>Arrivée :</strong> {{ object.date_arrivee|date:"d/m/Y H:i" }}</li>
-                                <li><strong>Prix :</strong> {{ object.prix_base|currency }}</li>
-                                <li><strong>Places disponibles :</strong> {{ object.places_disponibles }}</li>
+                                <li><strong>Prix Standard :</strong> {{ object.prix_standard|currency }} ({{ object.places_standard }} places)</li>
+                                {% if object.prix_business %}
+                                <li><strong>Prix Business :</strong> {{ object.prix_business|currency }} ({{ object.places_business }} places)</li>
+                                {% endif %}
+                                {% if object.prix_premiere %}
+                                <li><strong>Prix Première Classe :</strong> {{ object.prix_premiere|currency }} ({{ object.places_premiere }} places)</li>
+                                {% endif %}
                             </ul>
                         </div>
                     </div>

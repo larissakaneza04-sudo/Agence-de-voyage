@@ -1,0 +1,57 @@
+{% extends 'base/base.html' %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Test du filtre personnalisé</h1>
+    
+    <div class="card mt-4">
+        <div class="card-header">
+            <h2>Test du filtre format_currency</h2>
+        </div>
+        <div class="card-body">
+            <p>Valeur de test: {{ test_value }}</p>
+            <p>Résultat du filtre: {{ test_value|format_currency }}</p>
+            <p>Résultat attendu: 15 000 BIF</p>
+        </div>
+    </div>
+    
+    <div class="card mt-4">
+        <div class="card-header">
+            <h2>Test avec différentes valeurs</h2>
+        </div>
+        <div class="card-body">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Valeur</th>
+                        <th>Résultat</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>15000</td>
+                        <td>{{ 15000|format_currency }}</td>
+                    </tr>
+                    <tr>
+                        <td>2500000</td>
+                        <td>{{ 2500000|format_currency }}</td>
+                    </tr>
+                    <tr>
+                        <td>None</td>
+                        <td>{{ None|format_currency }}</td>
+                    </tr>
+                    <tr>
+                        <td>"" (chaîne vide)</td>
+                        <td>{{ ""|format_currency }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="mt-4">
+        <a href="{% url 'reservations:home' %}" class="btn btn-primary">Retour à l'accueil</a>
+    </div>
+</div>
+{% endblock %}

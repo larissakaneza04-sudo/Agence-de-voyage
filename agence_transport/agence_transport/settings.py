@@ -72,10 +72,16 @@ INTERNAL_IPS = [
 
 ROOT_URLCONF = 'agence_transport.urls'
 
+# Chemin vers le répertoire des templates de l'application reservations
+RESERVATIONS_TEMPLATES = os.path.join(BASE_DIR, 'reservations', 'templates')
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'templates'),
+            RESERVATIONS_TEMPLATES,
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -84,6 +90,10 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
+            'libraries': {
+                'currency_filters': 'reservations.templatetags.currency_filters',
+                'custom_filters': 'reservations.templatetags.custom_filters',
+            },
         },
     },
 ]

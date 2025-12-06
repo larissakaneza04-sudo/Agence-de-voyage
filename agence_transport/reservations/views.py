@@ -1,16 +1,17 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.template.loader import render_to_string
+from django.template.loader import render_to_string, get_template
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
-from django.db.models import Q
-from django.http import JsonResponse
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, FormView
+from django.db import models
+from django.db.models import Q, F, Sum
+from django.http import JsonResponse, HttpResponse
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, FormView, View
 from django.urls import reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.messages.views import SuccessMessageMixin
 from django.core.exceptions import PermissionDenied
-from django.template import RequestContext
+from django.template import RequestContext, Template, Context
 from django.http import HttpResponseForbidden, HttpResponseServerError, HttpResponseNotFound, JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
@@ -29,7 +30,7 @@ class SearchView(ListView):
         now = timezone.now()
         queryset = Horaire.objects.filter(
             date_depart__gt=now,  # Utilisation de __gt pour exclure les départs en cours
-            places_disponibles__gt=0
+            places_standard__gt=0  # On filtre sur les places standard par défaut
         ).select_related(
             'trajet__depart__ville',
             'trajet__arrivee__ville'
@@ -107,8 +108,11 @@ class HomeView(ListView):
         # Filtrer uniquement les horaires futurs avec des places disponibles
         now = timezone.now()
         queryset = Horaire.objects.filter(
-            date_depart__gt=now,  # Utilisation de __gt pour exclure les départs en cours
-            places_disponibles__gt=0
+            date_depart__gt=now  # Utilisation de __gt pour exclure les départs en cours
+        ).annotate(
+            total_places=models.F('places_standard') + models.F('places_business') + models.F('places_premiere')
+        ).filter(
+            total_places__gt=0  # Ne montrer que les horaires avec au moins une place disponible
         ).select_related(
             'trajet__depart__ville', 
             'trajet__arrivee__ville'
@@ -127,8 +131,10 @@ class HomeView(ListView):
             # S'assurer que la date est valide avant de filtrer
             try:
                 date_obj = timezone.datetime.strptime(date, '%Y-%m-%d').date()
+                next_day = date_obj + timezone.timedelta(days=1)
                 queryset = queryset.filter(
-                    date_depart__date=date_obj,
+                    date_depart__date__gte=date_obj,
+                    date_depart__date__lt=next_day,
                     date_depart__gt=now  # S'assurer que c'est dans le futur
                 )
             except (ValueError, TypeError):
@@ -203,8 +209,8 @@ class ReservationCreateView(LoginRequiredMixin, CreateView):
             # Récupérer l'horaire
             horaire = get_object_or_404(Horaire, pk=kwargs['pk'])
             
-            # Vérifier les places disponibles
-            if horaire.places_disponibles <= 0:
+            # Vérifier les places disponibles pour les billets standard
+            if horaire.get_places_disponibles('STD') <= 0:
                 messages.error(request, 'Désolé, il n\'y a plus de places disponibles pour ce trajet.')
                 return redirect('reservations:home')
             
@@ -281,14 +287,40 @@ class ReservationCreateView(LoginRequiredMixin, CreateView):
             # Récupérer l'horaire
             horaire = get_object_or_404(Horaire, pk=self.kwargs['pk'])
             
-            # Vérifier les places disponibles
+            # Récupérer le type de billet et le nombre de billets
+            type_billet = form.cleaned_data.get('type_billet', Billet.TypeBillet.STANDARD)
             nombre_billets = form.cleaned_data.get('nombre_billets', 0)
-            if horaire.places_disponibles < nombre_billets:
-                messages.error(self.request, "Désolé, il n'y a pas assez de places disponibles pour ce trajet.")
+            
+            # Vérifier les places disponibles selon le type de billet
+            places_disponibles = 0
+            message_erreur = ""
+            
+            if type_billet == Billet.TypeBillet.STANDARD:
+                places_disponibles = horaire.places_standard
+                message_erreur = "Désolé, il n'y a pas assez de places disponibles en classe Standard pour ce trajet."
+            elif type_billet == Billet.TypeBillet.BUSINESS:
+                places_disponibles = horaire.places_business
+                message_erreur = "Désolé, il n'y a pas assez de places disponibles en classe Business pour ce trajet."
+            elif type_billet == Billet.TypeBillet.PREMIERE:
+                places_disponibles = horaire.places_premiere
+                message_erreur = "Désolé, il n'y a pas assez de places disponibles en Première Classe pour ce trajet."
+            
+            if places_disponibles < nombre_billets:
+                messages.error(self.request, message_erreur)
                 return self.form_invalid(form, client_form)
             
             # Vérifier si la réservation est gratuite (6ème réservation)
             est_gratuite, nb_reservations = client.prochaine_reservation_gratuite()
+            
+            # Déterminer le prix en fonction du type de billet
+            if type_billet == Billet.TypeBillet.STANDARD:
+                prix_unitaire = float(horaire.prix_standard)
+            elif type_billet == Billet.TypeBillet.BUSINESS:
+                prix_unitaire = float(horaire.prix_business)
+            elif type_billet == Billet.TypeBillet.PREMIERE:
+                prix_unitaire = float(horaire.prix_premiere)
+            else:
+                prix_unitaire = float(horaire.prix_standard)
             
             # Calcul du montant total
             if est_gratuite:
@@ -298,7 +330,7 @@ class ReservationCreateView(LoginRequiredMixin, CreateView):
                     "Félicitations ! Votre 6ème réservation est offerte en tant que cadeau de fidélité !"
                 )
             else:
-                montant_total = float(horaire.prix_base) * nombre_billets
+                montant_total = prix_unitaire * nombre_billets
             
             # Création de la réservation
             reservation = Reservation.objects.create(
@@ -310,18 +342,28 @@ class ReservationCreateView(LoginRequiredMixin, CreateView):
             )
             
             # Création des billets
-            type_billet = form.cleaned_data.get('type_billet', Billet.TypeBillet.STANDARD)
             for i in range(nombre_billets):
                 Billet.objects.create(
                     reservation=reservation,
                     type_billet=type_billet,
-                    prix=horaire.prix_base,
+                    prix=prix_unitaire,
                     siege=f"{type_billet}-{i+1}"
                 )
             
-            # Mise à jour des places disponibles
-            horaire.places_disponibles -= nombre_billets
-            horaire.save()
+            # Mise à jour des places disponibles selon le type de billet
+            if type_billet == Billet.TypeBillet.STANDARD:
+                horaire.places_standard -= nombre_billets
+            elif type_billet == Billet.TypeBillet.BUSINESS:
+                horaire.places_business -= nombre_billets
+            elif type_billet == Billet.TypeBillet.PREMIERE:
+                horaire.places_premiere -= nombre_billets
+            
+            try:
+                horaire.save()
+            except Exception as e:
+                # En cas d'erreur lors de la sauvegarde
+                messages.error(self.request, f"Erreur lors de la mise à jour des places disponibles : {str(e)}")
+                return self.form_invalid(form, client_form)
             
             # Incrémenter les points de fidélité (1 point par billet)
             if not est_gratuite:  # On ne donne pas de points pour les réservations gratuites

@@ -4,6 +4,7 @@ from . import views
 from .views import SearchView, ajouter_ville, ajouter_trajet, ajouter_horaire, ajouter_gare
 from .views_paiement import PaiementCreateView
 from .reports import rapports_ventes
+from .views_test import test_currency_filter
 
 app_name = 'reservations'
 
@@ -20,6 +21,9 @@ urlpatterns = [
     path('compte/', views.MesReservationsView.as_view(), name='mon-compte'),
     path('compte/reservations/', views.MesReservationsView.as_view(), name='mes-reservations'),
     path('compte/profil/', views.ProfilUpdateView.as_view(), name='profil'),
+    
+    # Test du filtre personnalisé
+    path('test-currency-filter/', test_currency_filter, name='test-currency-filter'),
     
     # Réservations
     path('horaires/<int:pk>/', views.HoraireDetailView.as_view(), name='horaire-detail'),

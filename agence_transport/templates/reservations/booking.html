@@ -31,8 +31,8 @@
                             <div class="text-muted small">{{ horaire.trajet.arrivee.nom }}</div>
                         </div>
                         <div class="col-md-3 text-center text-md-end">
-                            <div class="h4 text-primary">{{ horaire.prix_base }} €</div>
-                            <div class="text-muted small">Prix par passager</div>
+                            <div class="h4 text-primary">{{ horaire.get_prix_min|currency }}</div>
+                            <div class="text-muted small">Prix à partir de</div>
                         </div>
                     </div>
                 </div>
@@ -119,17 +119,14 @@
                     <hr>
                     
                     <div id="passengers-summary">
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>1 x Adulte</span>
-                            <span>{{ horaire.prix_base }} €</span>
-                        </div>
+                        <!-- Les détails des passagers seront ajoutés ici par JavaScript -->
                     </div>
                     
                     <hr>
                     
                     <div class="d-flex justify-content-between fw-bold">
                         <span>Total :</span>
-                        <span id="total-amount">{{ horaire.prix_base }} €</span>
+                        <span id="total-amount">0 BIF</span>
                     </div>
                     
                     <div class="alert alert-info mt-3 small">
@@ -150,8 +147,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const addPassengerBtn = document.getElementById('add-passenger');
     const passengersSummary = document.getElementById('passengers-summary');
     const totalAmount = document.getElementById('total-amount');
-    const basePrice = {{ horaire.prix_base }};
+    const bookingForm = document.getElementById('booking-form');
+    
+    // Définir les prix des billets
+    const prices = {
+        standard: parseFloat('{{ horaire.prix_standard|default:0 }}'),
+        business: parseFloat('{{ horaire.prix_business|default:0 }}'),
+        premiere: parseFloat('{{ horaire.prix_premiere|default:0 }}')
+    };
+    
+    // Prix de base (standard par défaut)
     let passengerCount = 1;
+    let passengers = [];
+    let basePrice = prices.standard;
     
     // Ajouter le premier passager par défaut
     addPassengerFields();
@@ -187,10 +195,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Type de billet</label>
-                        <select class="form-select ticket-type" name="passenger_${passengerCount}_ticket_type" data-passenger="${passengerCount}">
-                            <option value="standard" data-price="1">Standard</option>
-                            <option value="premiere" data-price="1.5">Première Classe (+50%)</option>
-                            <option value="business" data-price="2">Business (+100%)</option>
+                        <select class="form-select ticket-type" name="passenger_${passengerCount}_ticket_type" data-passenger="${passengerCount}" onchange="updateSummary()">
+                            <option value="standard" data-price="${prices.standard}">Standard - ${prices.standard.toFixed(0)} BIF</option>
+                            ${prices.business > 0 ? `<option value="business" data-price="${prices.business}">Business - ${prices.business.toFixed(0)} BIF</option>` : ''}
+                            ${prices.premiere > 0 ? `<option value="premiere" data-price="${prices.premiere}">Première Classe - ${prices.premiere.toFixed(0)} BIF</option>` : ''}
                         </select>
                     </div>
                 </div>
@@ -243,23 +251,22 @@ document.addEventListener('DOMContentLoaded', function() {
         ticketTypeSelects.forEach((select, index) => {
             const passengerNumber = index + 1;
             const selectedOption = select.options[select.selectedIndex];
-            const ticketType = selectedOption.text;
-            const priceMultiplier = parseFloat(selectedOption.dataset.price);
-            const passengerPrice = basePrice * priceMultiplier;
+            const ticketType = selectedOption.value;
+            const price = parseFloat(selectedOption.dataset.price);
             
-            total += passengerPrice;
+            total += price;
             
             summaryHtml += `
                 <div class="d-flex justify-content-between mb-2">
-                    <span>Passager ${passengerNumber} (${ticketType})</span>
-                    <span>${passengerPrice.toFixed(2)} €</span>
+                    <span>Passager ${passengerNumber} (${ticketType.charAt(0).toUpperCase() + ticketType.slice(1)})</span>
+                    <span>${price.toFixed(0)} BIF</span>
                 </div>
             `;
         });
         
         // Mettre à jour l'affichage
-        passengersSummary.innerHTML = summaryHtml;
-        totalAmount.textContent = `${total.toFixed(2)} €`;
+        passengersSummary.innerHTML = summaryHtml || '<p class="text-muted">Ajoutez des passagers</p>';
+        totalAmount.textContent = `${total.toFixed(0)} BIF`;
     }
     
     // Mettre à jour le récapitulatif au chargement de la page

@@ -39,14 +39,75 @@ class Horaire(models.Model):
     trajet = models.ForeignKey(Trajet, on_delete=models.CASCADE, related_name='horaires')
     date_depart = models.DateTimeField()
     date_arrivee = models.DateTimeField()
-    prix_base = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
-    places_disponibles = models.PositiveIntegerField()
+    
+    # Prix pour chaque type de billet
+    prix_standard = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        validators=[MinValueValidator(0)],
+        verbose_name="Prix Standard (BIF)"
+    )
+    prix_business = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        validators=[MinValueValidator(0)],
+        verbose_name="Prix Business (BIF)"
+    )
+    prix_premiere = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        validators=[MinValueValidator(0)],
+        verbose_name="Prix Première Classe (BIF)"
+    )
+    
+    # Places disponibles pour chaque type de billet
+    places_standard = models.PositiveIntegerField(verbose_name="Places Standard")
+    places_business = models.PositiveIntegerField(verbose_name="Places Business")
+    places_premiere = models.PositiveIntegerField(verbose_name="Places Première Classe")
     
     class Meta:
         ordering = ['date_depart']
+        verbose_name = "Horaire"
+        verbose_name_plural = "Horaires"
         
     def __str__(self):
         return f"{self.trajet} - {self.date_depart.strftime('%d/%m/%Y %H:%M')}"
+    
+    @property
+    def places_disponibles_total(self):
+        """Retourne le nombre total de places disponibles"""
+        return self.places_standard + self.places_business + self.places_premiere
+    
+    def get_prix_par_type(self, type_billet):
+        """Retourne le prix en fonction du type de billet"""
+        prix_par_type = {
+            'STD': self.prix_standard,
+            'BUS': self.prix_business,
+            'PRE': self.prix_premiere,
+        }
+        return prix_par_type.get(type_billet, self.prix_standard)
+    
+    def get_places_disponibles(self, type_billet):
+        """Retourne le nombre de places disponibles pour un type de billet"""
+        places_par_type = {
+            'STD': self.places_standard,
+            'BUS': self.places_business,
+            'PRE': self.places_premiere,
+        }
+        return places_par_type.get(type_billet, 0)
+        
+    def get_prix_min(self):
+        """Retourne le prix minimum parmi les classes disponibles"""
+        prix_disponibles = []
+        
+        if self.places_standard > 0:
+            prix_disponibles.append(self.prix_standard)
+        if self.places_business > 0:
+            prix_disponibles.append(self.prix_business)
+        if self.places_premiere > 0:
+            prix_disponibles.append(self.prix_premiere)
+            
+        return min(prix_disponibles) if prix_disponibles else 0
 
 class Client(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
