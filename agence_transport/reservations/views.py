@@ -14,7 +14,7 @@ from django.template import RequestContext
 from django.http import HttpResponseForbidden, HttpResponseServerError, HttpResponseNotFound, JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
-from .models import Horaire, Gare, Trajet, Reservation, Client, Billet, Remboursement, User, Ville
+from .models import Horaire, Gare, Trajet, Reservation, Client, Billet, Remboursement, User, Ville, TicketBonus
 from .forms import VilleForm, TrajetForm, HoraireForm, GareForm
 from .forms import ContactForm, ClientForm, ReservationForm, PaiementForm, RemboursementForm, FiltreHorairesForm
 
