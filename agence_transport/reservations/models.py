@@ -103,9 +103,16 @@ class Billet(models.Model):
 class Paiement(models.Model):
     class StatutPaiement(models.TextChoices):
         PENDING = 'PEND', _('En attente')
-        COMPLETED = 'COMP', _('Complété')
+        PAID = 'PAID', _('Payé')
         FAILED = 'FAIL', _('Échoué')
-        REFUNDED = 'REFU', _('Remboursé')
+        REFUNDED = 'REFD', _('Remboursé')
+    
+    class OperateurPaiement(models.TextChoices):
+        LUMICASH = 'lumicash', 'Lumicash'
+        ECOCASH = 'ecocash', 'Ecocash'
+        IHELA = 'ihela', 'Ihela'
+        PAYPAL = 'paypal', 'PayPal'
+        CARTE = 'carte', 'Carte bancaire'
     
     reservation = models.OneToOneField(Reservation, on_delete=models.CASCADE, related_name='paiement')
     montant = models.DecimalField(max_digits=10, decimal_places=2)
@@ -115,10 +122,18 @@ class Paiement(models.Model):
         choices=StatutPaiement.choices,
         default=StatutPaiement.PENDING
     )
+    operateur = models.CharField(
+        max_length=20,
+        choices=OperateurPaiement.choices,
+        null=True,
+        blank=True
+    )
+    reference_paiement = models.CharField(max_length=100, blank=True, null=True)
+    numero_telephone = models.CharField(max_length=20, blank=True, null=True)
     stripe_payment_intent_id = models.CharField(max_length=100, blank=True, null=True)
     
     def __str__(self):
-        return f"Paiement {self.id} - {self.get_statut_display()}"
+        return f"Paiement {self.get_statut_display()} - {self.montant}€ - {self.operateur or 'Non spécifié'} - {self.reservation}"
 
 class Remboursement(models.Model):
     paiement = models.OneToOneField(Paiement, on_delete=models.CASCADE, related_name='remboursement')

@@ -183,7 +183,7 @@ else:
     EMAIL_PORT = 587
     EMAIL_USE_TLS = True
     EMAIL_HOST_USER = 'larissakaneza04@gmail.com'  # Remplacez par votre email
-    EMAIL_HOST_PASSWORD = 'votre_mot_de_passe'  # Remplacez par votre mot de passe
+    EMAIL_HOST_PASSWORD = 'Kaneza24?!'  # Remplacez par votre mot de passe
 
 # Configuration des emails
 DEFAULT_FROM_EMAIL = 'larissakaneza04@gmail.com'  # Email d'expéditeur par défaut

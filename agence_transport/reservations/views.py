@@ -126,6 +126,7 @@ class HoraireDetailView(LoginRequiredMixin, DetailView):
 
 from django.core.mail import send_mail
 from django.conf import settings
+from .emails import envoyer_email_confirmation_reservation
 
 class ReservationCreateView(LoginRequiredMixin, CreateView):
     model = Reservation
@@ -269,13 +270,18 @@ class ReservationCreateView(LoginRequiredMixin, CreateView):
             self.object = reservation
             
             # Envoyer un email de confirmation
-            self.send_confirmation_email()
-            
-            # Utiliser user.first_name au lieu de client.prenom
-            messages.success(
-                self.request, 
-                f"Réservation effectuée avec succès ! Un email de confirmation a été envoyé à {user.email}"
-            )
+            try:
+                envoyer_email_confirmation_reservation(reservation)
+                messages.success(
+                    self.request, 
+                    f"Réservation effectuée avec succès ! Un email de confirmation a été envoyé à {user.email}"
+                )
+            except Exception as e:
+                # En cas d'échec d'envoi d'email, on continue mais on affiche un message d'avertissement
+                messages.warning(
+                    self.request,
+                    f"La réservation a été créée mais l'email de confirmation n'a pas pu être envoyé : {str(e)}"
+                )
             return redirect('reservations:paiement-create', pk=reservation.pk)
             
         except Exception as e:
@@ -377,7 +383,7 @@ class ReservationCreateView(LoginRequiredMixin, CreateView):
         client.save()
         
         messages.success(self.request, "Paiement effectué avec succès ! Votre réservation est confirmée.")
-        return redirect('reservation-detail', pk=reservation.pk)
+        return redirect('reservations:reservation-detail', pk=reservation.pk)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -431,7 +437,7 @@ class ReservationAnnulerView(LoginRequiredMixin, UserPassesTestMixin, UpdateView
         return self.request.user == reservation.client.user
     
     def get_success_url(self):
-        return reverse_lazy('reservations:reservation-detail', kwargs={'pk': self.object.pk})
+        return reverse_lazy('reservations:mes-reservations')
     
     def form_valid(self, form):
         reservation = self.object
@@ -439,7 +445,7 @@ class ReservationAnnulerView(LoginRequiredMixin, UserPassesTestMixin, UpdateView
         # Vérifier que la réservation peut être annulée
         if reservation.statut != 'CONF':  # Confirmée
             messages.error(self.request, "Cette réservation ne peut pas être annulée.")
-            return redirect('mes-reservations')
+            return redirect('reservations:mes-reservations')
         
         # Mise à jour du statut de la réservation
         reservation.statut = 'ANNU'  # Annulée
