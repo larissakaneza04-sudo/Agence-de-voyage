@@ -1,0 +1,27 @@
+{% extends 'reservations/emails/base_email.html' %}
+
+{% block content %}
+    <h2>Félicitations, {{ client_nom }} ! 🎉</h2>
+    
+    <p>Nous sommes ravis de vous informer que vous avez gagné un ticket bonus pour vos prochains voyages !</p>
+    
+    <div style="background-color: #f8f9fa; border-left: 4px solid #28a745; padding: 15px; margin: 20px 0;">
+        <h3 style="margin-top: 0; color: #28a745;">Votre ticket bonus</h3>
+        <p><strong>Code :</strong> <code style="background: #e9ecef; padding: 2px 5px; border-radius: 3px;">{{ code }}</code></p>
+        <p><strong>Nombre de places offertes :</strong> {{ nombre_places }}</p>
+        <p><strong>Valable jusqu'au :</strong> {{ date_expiration|date:"d/m/Y à H:i" }}</p>
+    </div>
+    
+    <p>Pour utiliser votre ticket bonus, il vous suffit de le sélectionner lors de votre prochaine réservation.</p>
+    
+    <p style="text-align: center; margin: 30px 0;">
+        <a href="{{ site_url }}{% url 'reservations:home' %}" 
+           style="background-color: #28a745; color: white; padding: 12px 25px; text-decoration: none; border-radius: 4px; font-weight: bold;">
+            Réserver maintenant
+        </a>
+    </p>
+    
+    <p>Merci pour votre fidélité et bon voyage !</p>
+    
+    <p>L'équipe d'Agence de Voyage</p>
+{% endblock %}

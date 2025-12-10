@@ -320,12 +320,56 @@ class TicketBonus(models.Model):
     
     @classmethod
     def creer_ticket_bonus(cls, client, montant=0, nombre_places=1):
-        """Crée un nouveau ticket bonus pour un client"""
-        return cls.objects.create(
+        """
+        Crée un nouveau ticket bonus pour un client et envoie une notification par email
+        """
+        ticket = cls.objects.create(
             client=client,
             montant=montant,
             nombre_places=nombre_places
         )
+        
+        # Envoyer un email de notification de manière asynchrone
+        from django.core.mail import send_mail
+        from django.template.loader import render_to_string
+        from django.utils.html import strip_tags
+        from django.conf import settings
+        from django.utils import timezone
+        
+        try:
+            user = client.user
+            subject = '🎉 Félicitations ! Vous avez gagné un ticket bonus !'
+            
+            context = {
+                'ticket': ticket,
+                'client_nom': f"{user.first_name} {user.last_name}".strip() or user.username,
+                'date_expiration': ticket.date_expiration,
+                'nombre_places': ticket.nombre_places,
+                'code': ticket.code,
+                'site_url': getattr(settings, 'SITE_URL', 'http://127.0.0.1:8000'),
+                'contact_email': getattr(settings, 'DEFAULT_FROM_EMAIL', 'contact@agence-voyage.com'),
+                'contact_phone': getattr(settings, 'CONTACT_PHONE', '+33 1 23 45 67 89'),
+                'annee_courante': timezone.now().year
+            }
+            
+            html_message = render_to_string('reservations/emails/notification_ticket_bonus.html', context)
+            plain_message = strip_tags(html_message)
+            
+            send_mail(
+                subject=subject,
+                message=plain_message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[user.email],
+                html_message=html_message,
+                fail_silently=True,
+            )
+        except Exception as e:
+            # En cas d'erreur d'envoi d'email, on ne fait rien pour ne pas perturber le flux
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Erreur lors de l'envoi de l'email de ticket bonus: {str(e)}")
+        
+        return ticket
     
     def __str__(self):
         return f"Ticket Bonus {self.code} - {self.nombre_places} place(s) offerte(s) - {'Valide' if self.est_valide() else 'Expiré'}"

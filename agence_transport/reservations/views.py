@@ -382,16 +382,21 @@ class ReservationCreateView(LoginRequiredMixin, CreateView):
             
             try:
                 horaire.save()
+                
+                # Envoyer l'email de confirmation de réservation
+                from .emails import envoyer_email_confirmation_reservation
+                envoyer_email_confirmation_reservation(reservation)
+                
+                messages.success(
+                    self.request,
+                    f"Réservation effectuée avec succès ! Un email de confirmation a été envoyé à {user.email}."
+                )
+                
             except Exception as e:
                 # En cas d'erreur lors de la sauvegarde
                 messages.error(self.request, f"Erreur lors de la mise à jour des places disponibles : {str(e)}")
                 return self.form_invalid(form, client_form)
             
-                # En cas d'échec d'envoi d'email, on continue mais on affiche un message d'avertissement
-                messages.warning(
-                    self.request,
-                    f"La réservation a été créée mais l'email de confirmation n'a pas pu être envoyé : {str(e)}"
-                )
             return redirect('reservations:paiement-create', pk=reservation.pk)
             
         except Exception as e:

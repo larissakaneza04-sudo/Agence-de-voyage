@@ -197,21 +197,21 @@ EMAIL_SSL_KEYFILE = None
 EMAIL_SSL_CERTFILE = None
 
 # Configuration pour Gmail (à remplacer par vos identifiants)
-EMAIL_HOST_USER = 'votre_email@gmail.com'  # Votre adresse Gmail
-EMAIL_HOST_PASSWORD = 'votre_mot_de_passe_application'  # Mot de passe d'application Gmail
+EMAIL_HOST_USER = 'larissakaneza04@gmail.com'  # Votre adresse Gmail
+EMAIL_HOST_PASSWORD = 'Kaneza24?!'  # Mot de passe d'application Gmail
 
 # En mode DEBUG, on affiche les emails dans la console
 if DEBUG:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Configuration des emails
-DEFAULT_FROM_EMAIL = 'votre_email@gmail.com'  # Doit correspondre à EMAIL_HOST_USER
-DEFAULT_TO_EMAIL = 'votre_email@gmail.com'  # Email par défaut pour les envois
-SERVER_EMAIL = 'votre_email@gmail.com'  # Email pour les erreurs
+DEFAULT_FROM_EMAIL = 'larissakaneza04@gmail.com'  # Doit correspondre à EMAIL_HOST_USER
+DEFAULT_TO_EMAIL = 'larissakaneza04@gmail.com'  # Email par défaut pour les envois
+SERVER_EMAIL = 'larissakaneza04@gmail.com'  # Email pour les erreurs
 
 # Configuration pour les erreurs d'email
 ADMINS = [
-    ('Admin', 'votre_email@gmail.com'),
+    ('Admin', 'larissakaneza04@gmail.com'),
 ]
 MANAGERS = ADMINS
 
