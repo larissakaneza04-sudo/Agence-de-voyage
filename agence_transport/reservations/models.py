@@ -114,24 +114,32 @@ class Client(models.Model):
     telephone = models.CharField(max_length=20, blank=True, null=True)
     date_naissance = models.DateField(blank=True, null=True)
     points_fidelite = models.PositiveIntegerField(default=0)
+    places_reservees = models.PositiveIntegerField(default=0, help_text="Nombre total de places réservées")
     
     def __str__(self):
         return f"{self.user.get_full_name() or self.user.username}"
         
-    def prochaine_reservation_gratuite(self):
+    def verifier_bonus_places(self, nombre_places=5):
         """
-        Vérifie si la prochaine réservation est éligible à un bonus (toutes les 6 réservations)
-        Retourne un tuple (est_gratuite, nb_reservations_effectuees)
+        Vérifie si le client a atteint le nombre de places nécessaires pour un bonus
+        Retourne le nombre de tickets bonus gagnés
         """
-        # Compter le nombre de réservations confirmées ou utilisées
-        nb_reservations = self.reservations.filter(
-            statut__in=[Reservation.StatutReservation.CONFIRMEE, 
-                       Reservation.StatutReservation.UTILISEE]
-        ).count()
-        
-        # La 6ème, 12ème, 18ème, etc. réservation est gratuite
-        est_gratuite = (nb_reservations + 1) % 6 == 0
-        return est_gratuite, nb_reservations
+        tickets_gagnes = 0
+        # Vérifier si le client a atteint le seuil de 5 places
+        if self.places_reservees >= nombre_places:
+            tickets_gagnes = self.places_reservees // nombre_places
+            self.places_reservees = self.places_reservees % nombre_places
+            self.save()
+        return tickets_gagnes
+    
+    def ajouter_reservation(self, nombre_places):
+        """
+        Ajoute le nombre de places réservées et vérifie si un bonus est gagné
+        Retourne le nombre de tickets bonus gagnés (0 ou 1)
+        """
+        self.places_reservees += nombre_places
+        self.save()
+        return self.verifier_bonus_places()
 
 class Reservation(models.Model):
     class StatutReservation(models.TextChoices):
@@ -277,16 +285,47 @@ class Remboursement(models.Model):
     def __str__(self):
         return f"Remboursement {self.id} - {self.montant}€"
 
+import uuid
+from datetime import timedelta
+
 class TicketBonus(models.Model):
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='tickets_bonus')
-    montant = models.DecimalField(max_digits=10, decimal_places=2)
+    montant = models.DecimalField(max_digits=10, decimal_places=2, help_text="Montant du bon de réduction")
     date_creation = models.DateTimeField(auto_now_add=True)
-    date_expiration = models.DateTimeField()
+    date_expiration = models.DateTimeField(help_text="Date d'expiration du ticket (30 jours après création)")
     utilise = models.BooleanField(default=False)
-    code = models.CharField(max_length=20, unique=True)
+    code = models.CharField(max_length=20, unique=True, default=uuid.uuid4, editable=False)
+    nombre_places = models.PositiveIntegerField(default=1, help_text="Nombre de places offertes par ce ticket")
+    
+    def save(self, *args, **kwargs):
+        # Si c'est une nouvelle instance, définir la date d'expiration à 30 jours
+        if not self.id:
+            self.date_expiration = timezone.now() + timedelta(days=30)
+            # Générer un code unique si non fourni
+            if not self.code:
+                self.code = f"BONUS-{uuid.uuid4().hex[:8].upper()}"
+        super().save(*args, **kwargs)
     
     def est_valide(self):
+        """Vérifie si le ticket est valide (non utilisé et non expiré)"""
         return not self.utilise and self.date_expiration > timezone.now()
     
+    def utiliser(self):
+        """Marque le ticket comme utilisé"""
+        if self.est_valide():
+            self.utilise = True
+            self.save()
+            return True
+        return False
+    
+    @classmethod
+    def creer_ticket_bonus(cls, client, montant=0, nombre_places=1):
+        """Crée un nouveau ticket bonus pour un client"""
+        return cls.objects.create(
+            client=client,
+            montant=montant,
+            nombre_places=nombre_places
+        )
+    
     def __str__(self):
-        return f"Ticket Bonus {self.code} - {self.montant}€"
+        return f"Ticket Bonus {self.code} - {self.nombre_places} place(s) offerte(s) - {'Valide' if self.est_valide() else 'Expiré'}"

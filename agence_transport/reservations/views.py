@@ -173,20 +173,18 @@ class ReservationCreateView(LoginRequiredMixin, CreateView):
         horaire = get_object_or_404(Horaire, pk=self.kwargs['pk'])
         context['horaire'] = horaire
         
-        # Vérifier le statut de fidélité
-        est_gratuite = False
-        afficher_rappel = False
-        nb_reservations = 0
-        
+        # Vérifier les tickets bonus disponibles
+        tickets_bonus = []
         if self.request.user.is_authenticated and hasattr(self.request.user, 'client'):
-            est_gratuite, nb_reservations = self.request.user.client.prochaine_reservation_gratuite()
-            # Afficher un rappel si la prochaine réservation est la 6ème (donc 5 réservations effectuées)
-            afficher_rappel = (nb_reservations + 1) % 6 == 0 and not est_gratuite
+            tickets_bonus = TicketBonus.objects.filter(
+                client=self.request.user.client,
+                utilise=False,
+                date_expiration__gt=timezone.now()
+            )
         
         context.update({
-            'reservation_gratuite': est_gratuite,
-            'afficher_rappel_fidelite': afficher_rappel,
-            'nb_reservations': nb_reservations
+            'tickets_bonus': tickets_bonus,
+            'afficher_rappel_bonus': tickets_bonus.exists()
         })
         
         if 'client_form' not in context:
@@ -309,34 +307,40 @@ class ReservationCreateView(LoginRequiredMixin, CreateView):
                 messages.error(self.request, message_erreur)
                 return self.form_invalid(form, client_form)
             
-            # Vérifier si la réservation est gratuite (6ème réservation)
-            est_gratuite, nb_reservations = client.prochaine_reservation_gratuite()
-            
             # Déterminer le prix en fonction du type de billet
             if type_billet == Billet.TypeBillet.STANDARD:
-                prix_unitaire = float(horaire.prix_standard)
+                prix_unitaire = horaire.prix_standard
             elif type_billet == Billet.TypeBillet.BUSINESS:
-                prix_unitaire = float(horaire.prix_business)
+                prix_unitaire = horaire.prix_business
             elif type_billet == Billet.TypeBillet.PREMIERE:
-                prix_unitaire = float(horaire.prix_premiere)
-            else:
-                prix_unitaire = float(horaire.prix_standard)
+                prix_unitaire = horaire.prix_premiere
             
-            # Calcul du montant total
-            if est_gratuite:
-                montant_total = 0  # La réservation est gratuite
-                messages.success(
-                    self.request,
-                    "Félicitations ! Votre 6ème réservation est offerte en tant que cadeau de fidélité !"
-                )
-            else:
-                montant_total = prix_unitaire * nombre_billets
+            # Vérifier si l'utilisateur a un ticket bonus valide à utiliser
+            ticket_bonus = None
+            if hasattr(self.request.user, 'client'):
+                ticket_bonus = TicketBonus.objects.filter(
+                    client=self.request.user.client,
+                    utilise=False,
+                    date_expiration__gt=timezone.now()
+                ).first()
+                
+                if ticket_bonus and nombre_billets <= ticket_bonus.nombre_places:
+                    # Utiliser le ticket bonus
+                    prix_unitaire = 0
+                    ticket_bonus.utiliser()
+                    messages.success(
+                        self.request, 
+                        f"Votre ticket bonus {ticket_bonus.code} a été utilisé pour cette réservation !"
+                    )
+            
+            # Calculer le prix total
+            prix_total = prix_unitaire * nombre_billets
             
             # Création de la réservation
             reservation = Reservation.objects.create(
                 client=client,
                 horaire=horaire,
-                montant_total=montant_total,
+                montant_total=prix_total,  # Utilisation de la variable prix_total définie plus haut
                 reference=f"RES-{timezone.now().strftime('%Y%m%d%H%M%S')}",
                 statut=Reservation.StatutReservation.CONFIRMEE
             )
@@ -358,6 +362,24 @@ class ReservationCreateView(LoginRequiredMixin, CreateView):
             elif type_billet == Billet.TypeBillet.PREMIERE:
                 horaire.places_premiere -= nombre_billets
             
+            # Mettre à jour le compteur de places réservées pour le client
+            # et vérifier si un ticket bonus est gagné
+            tickets_gagnes = client.ajouter_reservation(nombre_billets)
+            
+            # Si des tickets bonus ont été gagnés, les créer
+            for _ in range(tickets_gagnes):
+                ticket = TicketBonus.creer_ticket_bonus(
+                    client=client,
+                    montant=0,  # Ou le montant de réduction si vous le souhaitez
+                    nombre_places=1
+                )
+                # Envoyer une notification au client
+                messages.success(
+                    self.request,
+                    f"Félicitations ! Vous avez gagné un ticket bonus pour votre prochain voyage ! "
+                    f"Code: {ticket.code} (Valable jusqu'au {ticket.date_expiration.strftime('%d/%m/%Y')})"
+                )
+            
             try:
                 horaire.save()
             except Exception as e:
@@ -365,22 +387,6 @@ class ReservationCreateView(LoginRequiredMixin, CreateView):
                 messages.error(self.request, f"Erreur lors de la mise à jour des places disponibles : {str(e)}")
                 return self.form_invalid(form, client_form)
             
-            # Incrémenter les points de fidélité (1 point par billet)
-            if not est_gratuite:  # On ne donne pas de points pour les réservations gratuites
-                client.points_fidelite += nombre_billets
-                client.save()
-            
-            # Stocker la réservation créée pour l'utiliser dans send_confirmation_email
-            self.object = reservation
-            
-            # Envoyer un email de confirmation
-            try:
-                envoyer_email_confirmation_reservation(reservation)
-                messages.success(
-                    self.request, 
-                    f"Réservation effectuée avec succès ! Un email de confirmation a été envoyé à {user.email}"
-                )
-            except Exception as e:
                 # En cas d'échec d'envoi d'email, on continue mais on affiche un message d'avertissement
                 messages.warning(
                     self.request,
@@ -528,6 +534,69 @@ class MesReservationsView(LoginRequiredMixin, ListView):
         return Reservation.objects.filter(
             client=client
         ).select_related('horaire__trajet__depart__ville', 'horaire__trajet__arrivee__ville').order_by('-date_reservation')
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Vérifier si l'utilisateur a un client associé
+        print(f"[DEBUG] Utilisateur: {self.request.user}")
+        print(f"[DEBUG] Client associé: {hasattr(self.request.user, 'client')}")
+        
+        if hasattr(self.request.user, 'client'):
+            # Vérifier le nombre de places réservées
+            print(f"[DEBUG] Nombre de places réservées: {self.request.user.client.places_reservees}")
+            
+            # Vérifier les tickets bonus existants
+            tickets_bonus = TicketBonus.objects.filter(
+                client=self.request.user.client,
+                utilise=False,
+                date_expiration__gt=timezone.now()
+            ).order_by('date_expiration')
+            
+            print(f"[DEBUG] Tickets bonus trouvés: {tickets_bonus.count()}")
+            
+            context['tickets_bonus'] = tickets_bonus
+            context['afficher_notification_bonus'] = tickets_bonus.exists()
+            
+            # Vérifier si on doit créer un nouveau ticket bonus
+            if self.request.user.client.places_reservees >= 5:
+                print("[DEBUG] Nombre de places suffisant pour un ticket bonus")
+                # Créer un ticket bonus
+                nouveau_ticket = TicketBonus.creer_ticket_bonus(
+                    client=self.request.user.client,
+                    montant=0,  # ou le montant de réduction souhaité
+                    nombre_places=1
+                )
+                print(f"[DEBUG] Nouveau ticket bonus créé: {nouveau_ticket}")
+                
+                # Mettre à jour le contexte avec le nouveau ticket
+                tickets_bonus = TicketBonus.objects.filter(
+                    client=self.request.user.client,
+                    utilise=False,
+                    date_expiration__gt=timezone.now()
+                ).order_by('date_expiration')
+                context['tickets_bonus'] = tickets_bonus
+                context['afficher_notification_bonus'] = True
+        else:
+            print("[DEBUG] Aucun client associé à cet utilisateur")
+            
+        return context
+
+
+class MesTicketsBonusView(LoginRequiredMixin, ListView):
+    model = TicketBonus
+    template_name = 'reservations/mes_tickets_bonus.html'
+    context_object_name = 'tickets'
+    paginate_by = 10
+    
+    def get_queryset(self):
+        # Récupérer uniquement les tickets valides (non utilisés et non expirés) du client
+        client = get_object_or_404(Client, user=self.request.user)
+        return TicketBonus.objects.filter(
+            client=client,
+            utilise=False,
+            date_expiration__gt=timezone.now()
+        ).order_by('date_expiration')
 
 class RemboursementDemandeView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     model = Remboursement
@@ -574,6 +643,10 @@ class ReservationAnnulerView(LoginRequiredMixin, UserPassesTestMixin, UpdateView
                 montant=reservation.montant_total * 0.8,  # 80% de remboursement
                 motif="Annulation par l'utilisateur"
             )
+        
+        # Décrémenter le compteur de places réservées
+        reservation.client.places_reservees = max(0, reservation.client.places_reservees - reservation.billets.count())
+        reservation.client.save()
         
         messages.success(self.request, "La réservation a été annulée avec succès. Un remboursement sera effectué si applicable.")
         return super().form_valid(form)

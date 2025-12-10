@@ -1,5 +1,6 @@
 {% extends 'base/base.html' %}
 {% load static %}
+{% load math_filters %}
 
 {% block title %}Mes Réservations{% endblock %}
 
@@ -8,6 +9,60 @@
     <div class="row">
         <div class="col-12">
             <h2 class="mb-4">Mes Réservations</h2>
+            
+            {% if afficher_notification_bonus %}
+            <div class="card border-success mb-4">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-gift me-2"></i>
+                        <h5 class="mb-0">Félicitations !</h5>
+                    </div>
+                    <span class="badge bg-white text-success">{{ tickets_bonus|length }} ticket{{ tickets_bonus|pluralize }} disponible{{ tickets_bonus|pluralize }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="flex-shrink-0 me-3">
+                            <div class="bg-success bg-opacity-10 p-3 rounded-circle">
+                                <i class="fas fa-ticket-alt text-success" style="font-size: 2rem;"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h5 class="text-success mb-1">Vous avez gagné un ticket bonus !</h5>
+                            <p class="mb-2">Utilisez-le pour obtenir une réduction sur votre prochaine réservation.</p>
+                            <div class="d-flex align-items-center">
+                                <a href="{% url 'reservations:mes-tickets-bonus' %}" class="btn btn-success me-2">
+                                    <i class="fas fa-ticket-alt me-1"></i> Voir mes tickets
+                                </a>
+                                <a href="{% url 'reservations:search' %}" class="btn btn-outline-success">
+                                    <i class="fas fa-search me-1"></i> Réserver maintenant
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-secondary d-flex align-items-center" role="alert">
+                <div class="flex-shrink-0 me-3">
+                    <i class="fas fa-ticket-alt fa-2x text-muted"></i>
+                </div>
+                <div>
+                    <h5 class="alert-heading mb-1">Gagnez un ticket bonus !</h5>
+                    {% with places_restantes=5|sub:request.user.client.places_reservees %}
+                    <p class="mb-1">Réservez encore {{ places_restantes }} place{{ places_restantes|pluralize }} pour obtenir un ticket bonus.</p>
+                    <div class="progress mt-2" style="height: 10px;">
+                        <div class="progress-bar bg-success" role="progressbar" 
+                             style="width: {% widthratio request.user.client.places_reservees 1 20 %}%" 
+                             aria-valuenow="{{ request.user.client.places_reservees }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="5">
+                        </div>
+                    </div>
+                    {% endwith %}
+                    <small class="text-muted">{{ request.user.client.places_reservees }}/5 places réservées</small>
+                </div>
+            </div>
+            {% endif %}
             
             {% if reservations %}
                 <div class="table-responsive">

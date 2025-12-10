@@ -20,6 +20,7 @@ urlpatterns = [
     # Gestion des comptes
     path('compte/', views.MesReservationsView.as_view(), name='mon-compte'),
     path('compte/reservations/', views.MesReservationsView.as_view(), name='mes-reservations'),
+    path('compte/tickets-bonus/', views.MesTicketsBonusView.as_view(), name='mes-tickets-bonus'),
     path('compte/profil/', views.ProfilUpdateView.as_view(), name='profil'),
     
     # Test du filtre personnalisé

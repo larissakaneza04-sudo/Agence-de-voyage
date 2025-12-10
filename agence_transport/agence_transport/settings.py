@@ -93,6 +93,7 @@ TEMPLATES = [
             'libraries': {
                 'currency_filters': 'reservations.templatetags.currency_filters',
                 'custom_filters': 'reservations.templatetags.custom_filters',
+                'math_filters': 'reservations.templatetags.math_filters',
             },
         },
     },
