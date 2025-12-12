@@ -6,3 +6,4 @@ django-widget-tweaks
 Pillow
 python-dotenv
 stripe
+gunicorn

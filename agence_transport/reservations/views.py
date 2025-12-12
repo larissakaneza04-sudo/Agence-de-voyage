@@ -595,8 +595,10 @@ class MesTicketsBonusView(LoginRequiredMixin, ListView):
     paginate_by = 10
     
     def get_queryset(self):
-        # Récupérer uniquement les tickets valides (non utilisés et non expirés) du client
-        client = get_object_or_404(Client, user=self.request.user)
+        # Get or create client for the user
+        client, created = Client.objects.get_or_create(user=self.request.user)
+        
+        # Return valid tickets (not used and not expired) for the client
         return TicketBonus.objects.filter(
             client=client,
             utilise=False,
