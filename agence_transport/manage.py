@@ -6,17 +6,15 @@ from pathlib import Path
 
 def main():
     """Run administrative tasks."""
-    # Set up the path
+    # Build paths inside the project like this: BASE_DIR / 'subdir'.
     BASE_DIR = Path(__file__).resolve().parent
     PROJECT_ROOT = BASE_DIR.parent
     
     # Add the project directory to the Python path
-    if str(BASE_DIR) not in sys.path:
-        sys.path.append(str(BASE_DIR))
+    sys.path.insert(0, str(BASE_DIR))
     
     # Add the parent directory to the Python path
-    if str(PROJECT_ROOT) not in sys.path:
-        sys.path.append(str(PROJECT_ROOT))
+    sys.path.insert(0, str(PROJECT_ROOT))
     
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'agence_transport.settings')
     

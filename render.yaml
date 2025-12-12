@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: agence-transport
+    env: python
+    buildCommand: |
+      pip install -r requirements.txt
+    startCommand: |
+      cd agence_transport && gunicorn agence_transport.wsgi:application
+    envVars:
+      - key: PYTHONPATH
+        value: /opt/render/project/src/agence_transport:/opt/render/project/src
+      - key: DJANGO_SETTINGS_MODULE
+        value: agence_transport.settings
+      - key: PYTHONUNBUFFERED
+        value: true
+    plan: free
+    numInstances: 1
+    region: oregon
+    healthCheckPath: /
